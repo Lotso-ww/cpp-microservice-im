@@ -1,5 +1,6 @@
 #include <brpc/closure_guard.h>
 #include <brpc/server.h>
+#include <butil/logging.h>
 #include <google/protobuf/service.h>
 #include "main.pb.h"
 
@@ -25,8 +26,11 @@ public:
 
 int main(int argc, char* argv[])
 {
-    // 2. 构造服务器对象
+    // 2. 构造服务器对象，关闭 brpc 的默认日志输出
     brpc::Server server;
+    logging::LoggingSettings settings;
+    settings.logging_dest = logging::LoggingDestination::LOG_TO_NONE;
+    logging::InitLogging(settings);
 
     // 3. 向服务器对象中, 新增 EchoService 服务
     // brpc::ServiceOwnership::SERVER_DOESNT_OWN_SERVICE -- 添加服务失败时, 服务器不会删除服务对象
