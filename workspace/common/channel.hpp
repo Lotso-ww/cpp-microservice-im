@@ -85,6 +85,8 @@ class ServiceManager
 {
 public:
     using ptr = std::shared_ptr<ServiceManager>;
+    ServiceManager(){}
+    ~ServiceManager(){}
     // 获取指定服务的节点信道
     ServiceChannel::Channelptr choose(const std::string &service_name)
     {
