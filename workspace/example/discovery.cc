@@ -1,5 +1,11 @@
 #include "../common/etcd.hpp"
+#include "../common/channel.hpp"
+#include "../brpc_back/main.pb.h"
+#include <google/protobuf/stubs/callback.h>
+#include <brpc/channel.h>
+#include <brpc/controller.h>
 #include <chrono>
+#include <functional>
 #include <gflags/gflags.h>
 #include <memory>
 #include <string>
@@ -11,7 +17,8 @@ DEFINE_string(log_file, "", "发布模式下, 用于指定日志的输出文件;
 DEFINE_int32(log_level, 0, "发布模式下, 用于指定日志输出等级");
 
 DEFINE_string(etcd_host, "http://127.0.0.1:2379", "服务注册中心地址");
-DEFINE_string(base_service, "/service", "服务器监控目录");
+DEFINE_string(base_service, "/service", "服务器监控根目录");
+DEFINE_string(call_service, "/service/echo", "服务器监控目录");
 
 void online(const std::string &service_name, const std::string &service_host)
 {
@@ -29,7 +36,43 @@ int main(int argc, char* argv[])
     google::ParseCommandLineFlags(&argc, &argv, true);
     init_logger(FLAGS_run_mode, FLAGS_log_file, FLAGS_log_level);
 
-    Discovery::ptr dclient = std::make_shared<Discovery>(FLAGS_etcd_host, FLAGS_base_service, online, offline);
+    // ****************** 改造思想 *********************
+    // 1. 先构造 Rpc 信道管理对象
+    // 2. 构造服务发现对象
+    // 3. 通过 Rpc 信道管理对象，获取提供 Echo 服务的信道
+    // 4. 发起 EchoRpc 调用
+    // ***************************************************
+    // 先构造 Rpc 信道管理对象
+    auto sm = std::make_shared<ServiceManager>();
+    sm->declared(FLAGS_call_service);
+    auto put_cb = std::bind(&ServiceManager::onServiceOnline, sm.get(), std::placeholders::_1, std::placeholders::_2);
+    auto del_cb = std::bind(&ServiceManager::onServiceOffline, sm.get(), std::placeholders::_1, std::placeholders::_2);
+
+    // 构造服务发现对象
+    Discovery::ptr dclient = std::make_shared<Discovery>(FLAGS_etcd_host, FLAGS_base_service, put_cb, del_cb);
+
+    // 通过 Rpc 信道管理对象，获取提供 Echo 服务的信道
+    auto channel = sm->choose(FLAGS_call_service);
+    if(!channel)
+    {
+        return -1;
+    }
+    // 发起 EchoRpc 调用[同步]
+    example::EchoService_Stub stub(channel.get());
+    example::EchoRequest req;
+    req.set_message("你好, Lotso!");
+    brpc::Controller *cntl = new brpc::Controller;
+    example::EchoResponse *rsp = new example::EchoResponse();
+    stub.Echo(cntl, &req, rsp, nullptr); // 同步
+    if(cntl->Failed() == true)
+    {
+        std::cout << "Rpc 调用失败: " << cntl->ErrorText() << std::endl;
+        return -1;
+    }
+    std::cout << "收到响应: " << rsp->message() << std::endl;
+    delete cntl;
+    delete rsp;
+
 
     std::this_thread::sleep_for(std::chrono::seconds(600));
     return 0;
