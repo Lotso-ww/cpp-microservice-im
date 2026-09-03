@@ -1,3 +1,4 @@
+#pragma once
 #include <cstdint>
 #include <etcd/Value.hpp>
 #include <etcd/Client.hpp>

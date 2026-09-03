@@ -1,3 +1,4 @@
+#pragma once
 #include <brpc/channel.h>
 #include <brpc/reloadable_flags.h>
 #include <cstdint>
@@ -106,15 +107,16 @@ public:
         _follow_services.insert(service_name);
     }
     // 服务器上线时调用的回调接口, 将服务节点管理起来
-    void onServiceOnline(const std::string &service_name, const std::string &host)
+    void onServiceOnline(const std::string &service_instance, const std::string &host)
     {
+        std::string service_name = getServiceName(service_instance);
         ServiceChannel::ptr service;
         {
             std::unique_lock<std::mutex> lock_guard(_mutex);
             auto fit = _follow_services.find(service_name);
             if(fit == _follow_services.end())
             {
-                LOG_DEBUG("{}-{} 服务上线了, 但是当前并不关心!");
+                LOG_DEBUG("{}-{} 服务上线了, 但是当前并不关心!", service_name, host);
                 return;
             }
             // 先获取管理对象, 没有则创建, 有则添加节点
@@ -124,7 +126,10 @@ public:
                 service = std::make_shared<ServiceChannel>(service_name);
                 _services.insert(std::make_pair(service_name, service));
             }
-            service = sit->second;
+            else 
+            {
+                service = sit->second;
+            }
         }
         if(!service)
         {
@@ -132,29 +137,38 @@ public:
             return;
         }
         service->append(host); // 这个操作内部我们也是加锁了的, 所以写在这里加锁的外面
+        LOG_DEBUG("{}-{} 服务上线新节点, 进行添加管理!", service_name, host);
     }
     // 服务下线时调用的接口, 从服务信道管理中, 删除指定节点信道
-    void onServiceOffline(const std::string &service_name, const std::string &host)
+    void onServiceOffline(const std::string &service_instance, const std::string &host)
     {
+        std::string service_name = getServiceName(service_instance);
         ServiceChannel::ptr service;
         {
             std::unique_lock<std::mutex> lock_guard(_mutex);
             auto fit = _follow_services.find(service_name);
             if(fit == _follow_services.end())
             {
-                LOG_DEBUG("{}-{} 服务下线了, 但是当前并不关心!");
+                LOG_DEBUG("{}-{} 服务下线了, 但是当前并不关心!", service_name, host);
                 return;
             }
             // 先获取管理对象, 没有则创建, 有则删除节点
             auto sit = _services.find(service_name);
             if(sit == _services.end())
             {
-                service = std::make_shared<ServiceChannel>(service_name);
-                _services.insert(std::make_pair(service_name, service));
+                LOG_WARN("删除{}服务节点时, 没有找到管理对象", service_name);
             }
             service = sit->second;
         }
         service->remove(host);
+        LOG_DEBUG("{}-{} 服务下线节点, 进行删除管理!", service_name, host);
+    }
+private:
+    std::string getServiceName(const std::string &service_instance)
+    {
+        auto pos = service_instance.find_last_of('/');
+        if(pos == std::string::npos) return service_instance;
+        return service_instance.substr(0, pos);
     }
 private:
     std::mutex _mutex;
