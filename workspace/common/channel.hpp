@@ -37,7 +37,7 @@ public:
             return;
         }
         std::unique_lock<std::mutex> lock_guard(_mutex);
-        _hosts.insert(std::make_pair(_servicename, channel));
+        _hosts.insert(std::make_pair(host, channel));
         _channels.push_back(channel);
     }
     // 服务器下线了一个节点, 则调用 remove 释放信道
@@ -157,6 +157,7 @@ public:
             if(sit == _services.end())
             {
                 LOG_WARN("删除{}服务节点时, 没有找到管理对象", service_name);
+                return;
             }
             service = sit->second;
         }

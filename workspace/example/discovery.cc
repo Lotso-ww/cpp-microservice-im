@@ -65,6 +65,8 @@ int main(int argc, char* argv[])
             continue;
         }
         std::cout << "收到响应: " << rsp->message() << std::endl;
+        delete cntl;
+        delete rsp;
         std::this_thread::sleep_for(std::chrono::seconds(1));
     }
     return 0;
