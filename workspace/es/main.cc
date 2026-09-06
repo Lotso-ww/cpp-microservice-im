@@ -1,8 +1,8 @@
-#include "../common/icindex.hpp"
-#include <cstdint>
+#include "../common/icsearch.hpp"
 #include <elasticlient/client.h>
 #include <gflags/gflags.h>
 #include <memory>
+
 
 DEFINE_bool(run_mode, false, "程序运行模式, false-调试 true-发布;");
 DEFINE_string(log_file, "", "发布模式下, 用于指定日志的输出文件;");
@@ -15,7 +15,6 @@ int main(int argc, char *argv[])
 
     std::vector<std::string> host_list = {"http://127.0.0.1:9200/"};
     auto client = std::make_shared<elasticlient::Client>(host_list);
-    std::cout << (uint64_t)client.get() << std::endl;
     bool ret = ESIndex("test_user", "_doc", client).append("nickname")
                                                    .append("phone", "keyword", "standard", true)
                                                    .create();                            
