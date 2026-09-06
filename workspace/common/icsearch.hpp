@@ -49,10 +49,10 @@ bool UnSerialize(const std::string &src, Json::Value &val)
 class ESIndex
 {
 public:
-    ESIndex(const std::string &name, const std::string &type, std::shared_ptr<elasticlient::Client> client)
-        : _name(name)
+    ESIndex(std::shared_ptr<elasticlient::Client> client, const std::string &name, const std::string &type = "_doc")
+        : _client(client)
+        , _name(name)
         , _type(type)
-        , _client(client)
     {
         Json::Value settings;
         Json::Value analysis;
@@ -74,7 +74,7 @@ public:
         _properties[key] = fields;
         return *this;
     }
-    bool create()
+    bool create(const std::string &index_id = "default_index")
     {
         Json::Value mappings;
         mappings["dynamic"] = true;
@@ -92,7 +92,7 @@ public:
         // 发起搜索请求
         try 
         {
-            auto rsp = _client->index(_name, _type, "", body);
+            auto rsp = _client->index(_name, _type, index_id, body);
             if(rsp.status_code < 200 || rsp.status_code >= 300)
             {
                 LOG_ERROR("创建ES索引 {} 失败, 响应状态码异常: {}", _name, rsp.status_code);
@@ -118,10 +118,10 @@ private:
 class ESInsert
 {
 public:
-    ESInsert(const std::string &name, const std::string &type, std::shared_ptr<elasticlient::Client> client)
-        : _name(name)
-        , _type(type)
-        , _client(client){}
+    ESInsert(std::shared_ptr<elasticlient::Client> client, const std::string &name, const std::string &type = "_doc")
+        : _client(client)
+        , _name(name)
+        , _type(type){}
     // 针对这个项目我们只需要使用字符串类型即可, 如果需要使用其他类型的话, 就需要进行重载
     ESInsert& append(const std::string &key, const std::string &val)
     {
@@ -166,10 +166,10 @@ private:
 class ESRemove
 {
 public:
-    ESRemove(const std::string &name, const std::string &type, std::shared_ptr<elasticlient::Client> client)
-        : _name(name)
-        , _type(type)
-        , _client(client){}
+    ESRemove(std::shared_ptr<elasticlient::Client> client, const std::string &name, const std::string &type = "_doc")
+        : _client(client)
+        , _name(name)
+        , _type(type){}
     bool remove(const std::string &id)
     {
         try 
@@ -198,10 +198,10 @@ private:
 class ESSearch
 {
 public:
-    ESSearch(const std::string &name, const std::string &type, std::shared_ptr<elasticlient::Client> client)
-        : _name(name)
-        , _type(type)
-        , _client(client){}
+    ESSearch(std::shared_ptr<elasticlient::Client> client, const std::string &name, const std::string &type = "_doc")
+        : _client(client)
+        , _name(name)
+        , _type(type){}
     // 必须不包含 -- terms -- 精确匹配,不分词
     ESSearch& append_must_not_terms(const std::string &key, const std::vector<std::string>& vals)
     {
@@ -212,7 +212,7 @@ public:
         }
         Json::Value terms;
         terms["terms"] = fields;
-        _must_not["must_not"].append(terms);
+        _must_not.append(terms);
         return *this;
     }
     // 应该包含 -- match -- 分词匹配, 不用精确
@@ -232,13 +232,18 @@ public:
         if(!_should.empty()) cond["should"] = _should;
         Json::Value query;
         query["bool"] = cond;
+        Json::Value root;
+        root["query"] = query;
+
         std::string body;
-        bool ret = Serialize(query, body);
+        bool ret = Serialize(root, body);
         if(ret == false)
         {
             LOG_ERROR("索引序列化失败!");
             return Json::Value();
         }
+        LOG_DEBUG("检索正文: 【{}】", body);
+
         // 发起搜索请求
         cpr::Response rsp;
         try 
@@ -255,9 +260,11 @@ public:
             LOG_ERROR("检索数据 {} 失败: {}", _name, e.what());
             return false;
         }
-        Json::Value dst;
-        UnSerialize(rsp.text, dst);
-        auto val = dst["hits"]["hits"];
+        // 需要对响应正文进行反序列化
+        LOG_DEBUG("检索响应正文: 【{}】", rsp.text);
+        Json::Value json_res;
+        UnSerialize(rsp.text, json_res);
+        auto val = json_res["hits"]["hits"];
         return val;
     }
 private:
