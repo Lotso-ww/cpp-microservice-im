@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Websocket</title>
+</head>
+<body>
+    <input type="text" id="message" placeholder="输入要发送的消息">
+    <button id="submit">提交</button>
+
+    <script>
+        // 1. 创建WebSocket实例，协议ws，指向服务端IP+端口
+        let websocket = new WebSocket("ws://124.222.15.175:9090");
+
+        // 连接成功建立回调
+        websocket.onopen = function() {
+            console.log("连接建立");
+        }
+
+        // 接收服务端推送的消息
+        websocket.onmessage = function(e) {
+            console.log("收到消息: " + e.data);
+        }
+
+        // 连接出错回调
+        websocket.onerror = function() {
+            console.log("连接异常");
+        }
+
+        // 连接关闭回调
+        websocket.onclose = function() {
+            console.log("连接关闭");
+        }
+
+        // 按钮点击：读取输入框内容，发送给websocket服务端
+        let input = document.querySelector('#message');
+        let button = document.querySelector('#submit');
+        button.onclick = function() {
+            console.log("发送消息: " + input.value);
+            websocket.send(input.value);
+        }
+    </script>
+</body>
+</html>
