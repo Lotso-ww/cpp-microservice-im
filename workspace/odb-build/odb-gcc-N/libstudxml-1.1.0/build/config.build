@@ -1,0 +1,8 @@
+# Created automatically by the config module, but feel free to edit.
+#
+config.version = 1
+
+# Base configuration inherited from ../
+#
+
+config.libstudxml.external_expat = false

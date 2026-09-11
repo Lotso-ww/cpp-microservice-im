@@ -1,0 +1,4 @@
+# file      : tests/buildfile
+# license   : OpenSSL and SSLeay Licenses; see accompanying LICENSE file
+
+./: {*/ -build/}

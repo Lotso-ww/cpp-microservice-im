@@ -1,0 +1,18 @@
+# file      : build/bootstrap.build
+# license   : OpenSSL and SSLeay Licenses; see accompanying LICENSE file
+
+project = libssl
+
+using version
+using config
+using test
+using install
+using dist
+
+# Sync with the libcrypto library ABI version (see libcrypto's bootstrap.build
+# for details).
+#
+if ($version.major == 1 && $version.minor == 1 && $version.patch == 1)
+  abi_version = '1.1'
+else
+  fail 'increment the ABI version?'

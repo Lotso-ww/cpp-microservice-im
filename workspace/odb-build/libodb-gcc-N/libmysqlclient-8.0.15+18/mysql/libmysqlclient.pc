@@ -1,0 +1,7 @@
+Name: libmysqlclient
+Version: 8.0.15+18
+Description: MySQL C API client library
+URL: https://www.mysql.com
+Cflags: -I/usr/include
+Libs: -L/usr/lib -lmysqlclient
+Libs.private: -lssl -lcrypto -lpthread -lz -ldl -lm -lrt -pthread

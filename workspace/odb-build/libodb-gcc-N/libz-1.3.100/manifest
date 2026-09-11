@@ -1,0 +1,19 @@
+: 1
+name: libz
+version: 1.3.100
+upstream-version: 1.3.1
+project: zlib
+summary: General-purpose lossless data compression C library
+license: Zlib ; Permissive free software license.
+topics: C, data compression
+description-file: README
+url: https://www.zlib.net/
+doc-url: https://www.zlib.net/manual.html
+src-url: https://git.build2.org/cgit/packaging/zlib/zlib/tree/libz/
+package-url: https://git.build2.org/cgit/packaging/zlib/
+email: zlib@gzip.org
+package-email: packaging@build2.org ; Mailing list.
+build-warning-email: builds@build2.org
+builds: all
+depends: * build2 >= 0.14.0
+depends: * bpkg >= 0.14.0

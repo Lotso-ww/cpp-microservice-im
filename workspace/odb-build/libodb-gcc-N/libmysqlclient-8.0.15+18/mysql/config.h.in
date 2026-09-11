@@ -1,0 +1,19 @@
+/* file      : mysql/config.h.in -*- C -*-
+ * license   : GPLv2 with FOSS License Exception; see accompanying COPYING file
+ */
+
+#ifndef MYSQL_CONFIG_H
+#define MYSQL_CONFIG_H
+
+#define MYSQL_VERSION_MAJOR  $MYSQL_VERSION_MAJOR$
+#define MYSQL_VERSION_MINOR  $MYSQL_VERSION_MINOR$
+#define MACHINE_TYPE         "$MACHINE_TYPE$"
+#define SYSTEM_TYPE          "$SYSTEM_TYPE$"
+#define DEFAULT_BASEDIR      "$DEFAULT_BASEDIR$"
+#define DEFAULT_CHARSET_HOME DEFAULT_BASEDIR
+#define PLUGINDIR            "$PLUGINDIR$"
+#define SHAREDIR             "$SHAREDIR$"
+#define DEFAULT_SYSCONFDIR   DEFAULT_BASEDIR"/etc"
+#define MYSQL_DATADIR        DEFAULT_BASEDIR"/data"
+
+#endif /* MYSQL_CONFIG_H */

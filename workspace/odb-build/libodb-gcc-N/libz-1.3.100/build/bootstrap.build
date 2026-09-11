@@ -1,0 +1,39 @@
+# file      : build/bootstrap.build
+# license   : zlib License; see accompanying LICENSE file
+
+project = libz
+
+using version
+using config
+using dist
+using test
+using install
+
+# zlib version has the <major>.<minor>.<revision>[.<subrevision>] form
+# (ZLIB_VER* macros in zlib.h). The version increment rules are not documented
+# and are hard to deduce. A subrevision release may contain a lot of changes
+# (see 1.2.7.1) and a revision release may contain very few of them (see
+# 1.2.8).
+#
+# Instead of dragging the fourth component around (and not being able to use a
+# lot of tooling support) we are going to map the upstream version to the
+# standard version as <major>.<minor>.<revision * 100 + subrevision>. Note
+# that subrevision does not exceed 0xF (see ZLIB_VERNUM macro in zlib.h). Note
+# that while there are no guarantees that this version follows the semver
+# semantics, it's probably reasonable to assume this is the case.
+#
+# There is no documentation that describes libz ABI versioning and
+# compatibility rules, so everything that follows is deduced from Makefile.in.
+#
+# The library naming scheme on Linux is
+# libz.so.<major>.<minor>.<revision>[.<subrevision>] (SHAREDLIBV in
+# Makefile.in). So presumably major is incremented on backwards-incompatible
+# ABI changes.
+#
+if ($version.major == 1 && $version.minor == 3 && $version.patch == 100)
+{
+  abi_version_major = 1
+  abi_version = "$abi_version_major.3.1" # $abi...3.1.1 for subrevision 1, etc.
+}
+else
+  fail "increment the ABI version?"

@@ -1,0 +1,4 @@
+# file      : tests/basic/testscript
+# license   : GPLv2 with Universal FOSS Exception; see accompanying LICENSE file
+
+$* >~'/libmysqlclient version: \d+\.\d+\.\d+(-.+)?/'

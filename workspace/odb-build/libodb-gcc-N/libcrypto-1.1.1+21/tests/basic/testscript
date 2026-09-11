@@ -1,0 +1,11 @@
+# file      : tests/basic/testscript
+# license   : OpenSSL and SSLeay Licenses; see accompanying LICENSE file
+
+$* >>~"%EOO%"
+  %version: OpenSSL .+%
+  %built on: .+ UTC%
+  %platform: $c.target.class-$c.target.cpu%
+  %compiler: $c.class .*-DLIBCRYPTO_BUILD -DZLIB .*%
+  OPENSSLDIR: N/A
+  ENGINESDIR: N/A
+  EOO

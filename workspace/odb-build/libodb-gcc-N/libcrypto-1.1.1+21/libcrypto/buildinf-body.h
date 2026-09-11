@@ -1,0 +1,32 @@
+/* file      : libcrypto/buildinf-body.h.in -*- C -*-
+ * license   : OpenSSL and SSLeay Licenses; see accompanying LICENSE file
+ */
+
+#ifndef LIBCRYPTO_BUILDINF_BODY_H
+#define LIBCRYPTO_BUILDINF_BODY_H
+
+#define PLATFORM "platform: linux-x86_64"
+
+/*
+ * Note that the __TIMESTAMP__ macro expands into the local time, but we will
+ * pretend it to be UTC to exactly reproduce the upstream's DATE macro. We
+ * don't think the exact build time really matters.
+ */
+#define DATE "built on: " __TIMESTAMP__ " UTC"
+
+/*
+ * Compiler class and flags.
+ */
+static const char compiler_flags[] =
+{
+  "compiler: gcc"
+  " -DLIBCRYPTO_BUILD"
+  " -DZLIB"
+  " -D_REENTRANT"
+  " -DOPENSSL_USE_NODELETE"
+  " -Wno-all"
+  " -Wno-extra"
+  " -Wno-error"
+};
+
+#endif /* LIBCRYPTO_BUILDINF_BODY_H */

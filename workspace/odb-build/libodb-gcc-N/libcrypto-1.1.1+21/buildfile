@@ -1,0 +1,9 @@
+# file      : buildfile
+# license   : OpenSSL and SSLeay Licenses; see accompanying LICENSE file
+
+./: {*/ -build/} doc{LICENSE INSTALL README} manifest
+
+# Don't install tests or the INSTALL file.
+#
+tests/:          install = false
+doc{INSTALL}@./: install = false

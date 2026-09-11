@@ -1,0 +1,11 @@
+Name: libssl
+Version: 1.1.1+21
+Description: C library providing SSLv3 and TLS implementations
+URL: https://www.openssl.org/
+Cflags: -I/usr/include
+Libs: -L/usr/lib -lssl -lcrypto
+Libs.private: -lz -ldl -lpthread
+
+build2.metadata = 1
+
+cc.type = c

@@ -1,0 +1,4 @@
+# file      : tests/buildfile
+# license   : GNU GPL v3; see accompanying LICENSE file
+
+./: testscript $odb

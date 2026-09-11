@@ -1,0 +1,410 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="744.09448819"
+   height="1052.3622047"
+   id="svg1947"
+   sodipodi:version="0.32"
+   inkscape:version="0.46"
+   sodipodi:docbase="/home/boris/tmp"
+   sodipodi:docname="odb-arch.svg"
+   inkscape:export-filename="/home/boris/inkscape/odb-arch-t.png"
+   inkscape:export-xdpi="66.988091"
+   inkscape:export-ydpi="66.988091"
+   inkscape:output_extension="org.inkscape.output.svg.inkscape">
+  <defs
+     id="defs1949">
+    <marker
+       inkscape:stockid="Arrow1Mstart"
+       orient="auto"
+       refY="0.0"
+       refX="0.0"
+       id="Arrow1Mstart"
+       style="overflow:visible">
+      <path
+         id="path3971"
+         d="M 0.0,0.0 L 5.0,-5.0 L -12.5,0.0 L 5.0,5.0 L 0.0,0.0 z "
+         style="fill-rule:evenodd;stroke:#000000;stroke-width:1.0pt;marker-start:none"
+         transform="scale(0.4) translate(10,0)" />
+    </marker>
+    <marker
+       inkscape:stockid="TriangleInS"
+       orient="auto"
+       refY="0.0"
+       refX="0.0"
+       id="TriangleInS"
+       style="overflow:visible">
+      <path
+         id="path4105"
+         d="M 5.77,0.0 L -2.88,5.0 L -2.88,-5.0 L 5.77,0.0 z "
+         style="fill-rule:evenodd;stroke:#000000;stroke-width:1.0pt;marker-start:none"
+         transform="scale(-0.2)" />
+    </marker>
+    <marker
+       inkscape:stockid="TriangleOutS"
+       orient="auto"
+       refY="0.0"
+       refX="0.0"
+       id="TriangleOutS"
+       style="overflow:visible">
+      <path
+         id="path4114"
+         d="M 5.77,0.0 L -2.88,5.0 L -2.88,-5.0 L 5.77,0.0 z "
+         style="fill-rule:evenodd;stroke:#000000;stroke-width:1.0pt;marker-start:none"
+         transform="scale(0.2)" />
+    </marker>
+    <marker
+       inkscape:stockid="Arrow2Send"
+       orient="auto"
+       refY="0.0"
+       refX="0.0"
+       id="Arrow2Send"
+       style="overflow:visible;">
+      <path
+         id="path3998"
+         style="font-size:12.0;fill-rule:evenodd;stroke-width:0.62500000;stroke-linejoin:round;"
+         d="M 8.7185878,4.0337352 L -2.2072895,0.016013256 L 8.7185884,-4.0017078 C 6.9730900,-1.6296469 6.9831476,1.6157441 8.7185878,4.0337352 z "
+         transform="scale(0.3) rotate(180) translate(-2.3,0)" />
+    </marker>
+    <marker
+       inkscape:stockid="Arrow1Send"
+       orient="auto"
+       refY="0.0"
+       refX="0.0"
+       id="Arrow1Send"
+       style="overflow:visible;">
+      <path
+         id="path3980"
+         d="M 0.0,0.0 L 5.0,-5.0 L -12.5,0.0 L 5.0,5.0 L 0.0,0.0 z "
+         style="fill-rule:evenodd;stroke:#000000;stroke-width:1.0pt;marker-start:none;"
+         transform="scale(0.2) rotate(180) translate(6,0)" />
+    </marker>
+    <marker
+       inkscape:stockid="TriangleInL"
+       orient="auto"
+       refY="0.0"
+       refX="0.0"
+       id="TriangleInL"
+       style="overflow:visible">
+      <path
+         id="path4099"
+         d="M 5.77,0.0 L -2.88,5.0 L -2.88,-5.0 L 5.77,0.0 z "
+         style="fill-rule:evenodd;stroke:#000000;stroke-width:1.0pt;marker-start:none"
+         transform="scale(-0.8)" />
+    </marker>
+    <marker
+       inkscape:stockid="Arrow1Lstart"
+       orient="auto"
+       refY="0.0"
+       refX="0.0"
+       id="Arrow1Lstart"
+       style="overflow:visible">
+      <path
+         id="path3965"
+         d="M 0.0,0.0 L 5.0,-5.0 L -12.5,0.0 L 5.0,5.0 L 0.0,0.0 z "
+         style="fill-rule:evenodd;stroke:#000000;stroke-width:1.0pt;marker-start:none"
+         transform="scale(0.8) translate(12.5,0)" />
+    </marker>
+    <marker
+       inkscape:stockid="Arrow2Mend"
+       orient="auto"
+       refY="0.0"
+       refX="0.0"
+       id="Arrow2Mend"
+       style="overflow:visible;">
+      <path
+         id="path3992"
+         style="font-size:12.0;fill-rule:evenodd;stroke-width:0.62500000;stroke-linejoin:round;"
+         d="M 8.7185878,4.0337352 L -2.2072895,0.016013256 L 8.7185884,-4.0017078 C 6.9730900,-1.6296469 6.9831476,1.6157441 8.7185878,4.0337352 z "
+         transform="scale(0.6) rotate(180) translate(0,0)" />
+    </marker>
+    <marker
+       inkscape:stockid="Arrow1Mend"
+       orient="auto"
+       refY="0.0"
+       refX="0.0"
+       id="Arrow1Mend"
+       style="overflow:visible;">
+      <path
+         id="path3974"
+         d="M 0.0,0.0 L 5.0,-5.0 L -12.5,0.0 L 5.0,5.0 L 0.0,0.0 z "
+         style="fill-rule:evenodd;stroke:#000000;stroke-width:1.0pt;marker-start:none;"
+         transform="scale(0.4) rotate(180) translate(10,0)" />
+    </marker>
+    <marker
+       inkscape:stockid="Arrow1Lend"
+       orient="auto"
+       refY="0.0"
+       refX="0.0"
+       id="Arrow1Lend"
+       style="overflow:visible;">
+      <path
+         id="path3968"
+         d="M 0.0,0.0 L 5.0,-5.0 L -12.5,0.0 L 5.0,5.0 L 0.0,0.0 z "
+         style="fill-rule:evenodd;stroke:#000000;stroke-width:1.0pt;marker-start:none;"
+         transform="scale(0.8) rotate(180) translate(12.5,0)" />
+    </marker>
+    <inkscape:perspective
+       sodipodi:type="inkscape:persp3d"
+       inkscape:vp_x="0 : 526.18109 : 1"
+       inkscape:vp_y="0 : 1000 : 0"
+       inkscape:vp_z="744.09448 : 526.18109 : 1"
+       inkscape:persp3d-origin="372.04724 : 350.78739 : 1"
+       id="perspective77" />
+  </defs>
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     gridtolerance="10000"
+     guidetolerance="10"
+     objecttolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="0.79999996"
+     inkscape:cx="325.54804"
+     inkscape:cy="759.16274"
+     inkscape:document-units="px"
+     inkscape:current-layer="layer1"
+     showgrid="false"
+     inkscape:window-width="1670"
+     inkscape:window-height="1025"
+     inkscape:window-x="0"
+     inkscape:window-y="0">
+    <inkscape:grid
+       type="xygrid"
+       id="grid2450"
+       visible="true"
+       enabled="true" />
+  </sodipodi:namedview>
+  <metadata
+     id="metadata1952">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     style="opacity:1">
+    <rect
+       style="opacity:1;fill:#e1ecf6;fill-opacity:1;fill-rule:evenodd;stroke:#e1ecf6;stroke-width:19.11361885;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+       id="rect4099"
+       width="356.4422"
+       height="85.467361"
+       x="203.24568"
+       y="56.645363"
+       inkscape:export-filename="/home/boris/inkscape/odb-arch-t.png"
+       inkscape:export-xdpi="66.988091"
+       inkscape:export-ydpi="66.988091" />
+    <rect
+       style="opacity:1;fill:#577aa7;fill-opacity:1;fill-rule:evenodd;stroke:#5679a6;stroke-width:21.99446297;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+       id="rect4103"
+       width="153.07578"
+       height="33.819218"
+       x="-542.89569"
+       y="93.412643"
+       transform="scale(-1,1)"
+       inkscape:export-filename="/home/boris/inkscape/odb-arch-t.png"
+       inkscape:export-xdpi="66.988091"
+       inkscape:export-ydpi="66.988091" />
+    <text
+       xml:space="preserve"
+       style="font-size:13.78440762px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:100%;writing-mode:lr-tb;text-anchor:start;opacity:1;fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;marker:none;marker-start:none;marker-mid:none;marker-end:none;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;visibility:visible;display:inline;overflow:visible;font-family:Bitstream Vera Sans Mono;-inkscape-font-specification:Bitstream Vera Sans Mono Bold"
+       x="426.08978"
+       y="109.31374"
+       id="text4105"
+       sodipodi:linespacing="100%"
+       transform="scale(0.9475703,1.0553307)"
+       inkscape:export-filename="/home/boris/inkscape/odb-arch-t.png"
+       inkscape:export-xdpi="66.988091"
+       inkscape:export-ydpi="66.988091"><tspan
+         sodipodi:role="line"
+         id="tspan4125"
+         x="426.08978"
+         y="109.31374">Application Code</tspan></text>
+    <rect
+       style="opacity:1;fill:#577aa7;fill-opacity:1;fill-rule:evenodd;stroke:#5679a6;stroke-width:21.14485359;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+       id="rect4111"
+       width="138.53285"
+       height="34.538216"
+       x="-357.79926"
+       y="93.017075"
+       transform="scale(-1,1)"
+       inkscape:export-filename="/home/boris/inkscape/odb-arch-t.png"
+       inkscape:export-xdpi="66.988091"
+       inkscape:export-ydpi="66.988091" />
+    <text
+       xml:space="preserve"
+       style="font-size:13.70444584px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:100%;writing-mode:lr-tb;text-anchor:start;opacity:1;fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;marker:none;marker-start:none;marker-mid:none;marker-end:none;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;visibility:visible;display:inline;overflow:visible;font-family:Bitstream Vera Sans Mono;-inkscape-font-specification:Bitstream Vera Sans Mono Bold"
+       x="232.20055"
+       y="108.67963"
+       id="text4113"
+       sodipodi:linespacing="100%"
+       transform="scale(0.9420736,1.0614882)"
+       inkscape:export-filename="/home/boris/inkscape/odb-arch-t.png"
+       inkscape:export-xdpi="66.988091"
+       inkscape:export-ydpi="66.988091"><tspan
+         sodipodi:role="line"
+         id="tspan4120"
+         x="232.20055"
+         y="108.67963">Persistent Classes</tspan></text>
+    <rect
+       style="fill:#e1ecf6;fill-opacity:1;fill-rule:evenodd;stroke:#e1ecf6;stroke-width:25.07188988;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+       id="rect4061"
+       width="350.48395"
+       height="149.55804"
+       x="206.27087"
+       y="179.81218"
+       inkscape:export-filename="/home/boris/inkscape/odb-arch-t.png"
+       inkscape:export-xdpi="66.988091"
+       inkscape:export-ydpi="66.988091" />
+    <rect
+       style="fill:#577aa7;fill-opacity:1;fill-rule:evenodd;stroke:#5679a6;stroke-width:21.85818291;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+       id="rect4035"
+       width="153.5531"
+       height="33.297592"
+       x="-543.32996"
+       y="214.04765"
+       transform="scale(-1,1)"
+       inkscape:export-filename="/home/boris/inkscape/odb-arch-t.png"
+       inkscape:export-xdpi="66.988091"
+       inkscape:export-ydpi="66.988091" />
+    <rect
+       style="fill:#577aa7;fill-opacity:1;fill-rule:evenodd;stroke:#5679a6;stroke-width:21.26772499;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+       id="rect4043"
+       width="137.97311"
+       height="35.082535"
+       x="-357.69339"
+       y="213.11913"
+       transform="scale(-1,1)"
+       inkscape:export-filename="/home/boris/inkscape/odb-arch-t.png"
+       inkscape:export-xdpi="66.988091"
+       inkscape:export-ydpi="66.988091" />
+    <text
+       xml:space="preserve"
+       style="font-size:12.72555733px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:100%;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;marker:none;marker-start:none;marker-mid:none;marker-end:none;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;visibility:visible;display:inline;overflow:visible;font-family:Bitstream Vera Sans;-inkscape-font-specification:Bitstream Vera Sans Bold"
+       x="363.88818"
+       y="188.32079"
+       id="text4127"
+       sodipodi:linespacing="100%"
+       transform="scale(1.0051164,0.9949096)"
+       inkscape:export-filename="/home/boris/inkscape/odb-arch-t.png"
+       inkscape:export-xdpi="66.988091"
+       inkscape:export-ydpi="66.988091"><tspan
+         sodipodi:role="line"
+         id="tspan4131"
+         x="363.88818"
+         y="188.32079">ODB</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:12.72555733px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:100%;writing-mode:lr-tb;text-anchor:start;opacity:1;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;marker:none;marker-start:none;marker-mid:none;marker-end:none;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;visibility:visible;display:inline;overflow:visible;font-family:Bitstream Vera Sans;-inkscape-font-specification:Bitstream Vera Sans Bold"
+       x="339.01544"
+       y="67.706772"
+       id="text4085"
+       sodipodi:linespacing="100%"
+       transform="scale(1.0051164,0.9949096)"
+       inkscape:export-filename="/home/boris/inkscape/odb-arch-t.png"
+       inkscape:export-xdpi="66.988091"
+       inkscape:export-ydpi="66.988091"><tspan
+         sodipodi:role="line"
+         id="tspan4087"
+         x="339.01544"
+         y="67.706772">Application</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:13.78440762px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:100%;writing-mode:lr-tb;text-anchor:start;opacity:1;fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;marker:none;marker-start:none;marker-mid:none;marker-end:none;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;visibility:visible;display:inline;overflow:visible;font-family:Bitstream Vera Sans Mono;-inkscape-font-specification:Bitstream Vera Sans Mono Bold"
+       x="417.64713"
+       y="223.02219"
+       id="text4165"
+       sodipodi:linespacing="100%"
+       transform="scale(0.9475703,1.0553307)"
+       inkscape:export-filename="/home/boris/inkscape/odb-arch-t.png"
+       inkscape:export-xdpi="66.988091"
+       inkscape:export-ydpi="66.988091"><tspan
+         sodipodi:role="line"
+         id="tspan4169"
+         x="417.64713"
+         y="223.02219">ODB Common Runtime</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:13.78440762px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:100%;writing-mode:lr-tb;text-anchor:start;opacity:1;fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;marker:none;marker-start:none;marker-mid:none;marker-end:none;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;visibility:visible;display:inline;overflow:visible;font-family:Bitstream Vera Sans Mono;-inkscape-font-specification:Bitstream Vera Sans Mono Bold"
+       x="246.68355"
+       y="223.02219"
+       id="text4171"
+       sodipodi:linespacing="100%"
+       transform="scale(0.9475703,1.0553307)"
+       inkscape:export-filename="/home/boris/inkscape/odb-arch-t.png"
+       inkscape:export-xdpi="66.988091"
+       inkscape:export-ydpi="66.988091"><tspan
+         sodipodi:role="line"
+         id="tspan4177"
+         x="246.68355"
+         y="223.02219">Generated Code</tspan></text>
+    <rect
+       style="opacity:1;fill:#577aa7;fill-opacity:1;fill-rule:evenodd;stroke:#5679a6;stroke-width:28.23288155;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+       id="rect4179"
+       width="316.83414"
+       height="26.922894"
+       x="-539.57642"
+       y="287.25192"
+       transform="scale(-1,1)"
+       inkscape:export-filename="/home/boris/inkscape/odb-arch-t.png"
+       inkscape:export-xdpi="66.988091"
+       inkscape:export-ydpi="66.988091" />
+    <text
+       xml:space="preserve"
+       style="font-size:13.78440762px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:100%;writing-mode:lr-tb;text-anchor:start;opacity:1;fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;marker:none;marker-start:none;marker-mid:none;marker-end:none;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;visibility:visible;display:inline;overflow:visible;font-family:Bitstream Vera Sans Mono;-inkscape-font-specification:Bitstream Vera Sans Mono Bold"
+       x="331.11002"
+       y="289.35214"
+       id="text4181"
+       sodipodi:linespacing="100%"
+       transform="scale(0.9475703,1.0553307)"
+       inkscape:export-filename="/home/boris/inkscape/odb-arch-t.png"
+       inkscape:export-xdpi="66.988091"
+       inkscape:export-ydpi="66.988091"><tspan
+         sodipodi:role="line"
+         id="tspan4185"
+         x="331.11002"
+         y="289.35214">ODB MySQL Runtime</tspan></text>
+    <rect
+       style="opacity:1;fill:#e1ecf6;fill-opacity:1;fill-rule:evenodd;stroke:#e1ecf6;stroke-width:22.96506691;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+       id="rect4207"
+       width="352.76007"
+       height="33.008934"
+       x="205.11604"
+       y="368.49875"
+       inkscape:export-filename="/home/boris/inkscape/odb-arch-t.png"
+       inkscape:export-xdpi="66.988091"
+       inkscape:export-ydpi="66.988091" />
+    <text
+       xml:space="preserve"
+       style="font-size:12.72555733px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:100%;writing-mode:lr-tb;text-anchor:start;opacity:1;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;marker:none;marker-start:none;marker-mid:none;marker-end:none;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;visibility:visible;display:inline;overflow:visible;font-family:Bitstream Vera Sans;-inkscape-font-specification:Bitstream Vera Sans Bold"
+       x="318.12234"
+       y="392.35941"
+       id="text4201"
+       sodipodi:linespacing="100%"
+       transform="scale(1.0051164,0.9949096)"
+       inkscape:export-filename="/home/boris/inkscape/odb-arch-t.png"
+       inkscape:export-xdpi="66.988091"
+       inkscape:export-ydpi="66.988091"><tspan
+         sodipodi:role="line"
+         id="tspan4205"
+         x="318.12234"
+         y="392.35941">MySQL Database</tspan></text>
+  </g>
+</svg>

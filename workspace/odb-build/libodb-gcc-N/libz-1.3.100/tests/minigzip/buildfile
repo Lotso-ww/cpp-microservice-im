@@ -1,0 +1,15 @@
+# file      : tests/minigzip/buildfile
+# license   : zlib License; see accompanying LICENSE file
+
+import libs = libz%lib{z}
+
+exe{driver}: {h c}{*} $libs testscript
+
+# Disable MSVC warnings that pop up with /W3 and Clang warnings.
+#
+# @@ TMP: try to re-enable on next release.
+#
+if ($c.class == 'msvc')
+  c.coptions += /wd4996
+elif ($c.id == 'clang' && $c.target.system == 'win32-msvc')
+  c.coptions += -Wno-deprecated-declarations

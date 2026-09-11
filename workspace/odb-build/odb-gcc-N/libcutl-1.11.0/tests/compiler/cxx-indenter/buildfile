@@ -1,0 +1,7 @@
+# file      : tests/compiler/cxx-indenter/buildfile
+# license   : MIT; see accompanying LICENSE file
+
+import libs = libcutl%lib{cutl}
+
+exe{driver}: {hxx cxx}{*} $libs
+exe{driver}: file{output.std}: test.stdout = true

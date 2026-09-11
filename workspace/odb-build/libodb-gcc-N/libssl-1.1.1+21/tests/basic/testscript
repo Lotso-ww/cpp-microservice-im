@@ -1,0 +1,4 @@
+# file      : tests/basic/testscript
+# license   : OpenSSL and SSLeay Licenses; see accompanying LICENSE file
+
+$*

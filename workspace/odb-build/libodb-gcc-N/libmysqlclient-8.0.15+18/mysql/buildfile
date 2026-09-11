@@ -1,0 +1,294 @@
+# file      : mysql/buildfile
+# license   : GPLv2 with Universal FOSS Exception; see accompanying LICENSE file
+
+import imp_libs  = libssl%lib{ssl}
+import imp_libs += libcrypto%lib{crypto}
+import imp_libs += libz%lib{z}
+
+tclass = $c.target.class
+tsys   = $c.target.system
+
+linux   = ($tclass == 'linux')
+bsd     = ($tclass == 'bsd')
+macos   = ($tclass == 'macos')
+windows = ($tclass == 'windows')
+
+# Windows-specific utilities.
+#
+mysys_win32 = my_conio my_windac my_winerr my_winfile win_timers
+
+# Windows-specific named pipe and shared memory based communication channels.
+#
+vio_win32 = viopipe vioshm
+
+lib{mysqlclient}: {h c        }{*            -version -config} \
+                  {h          }{              version  config} \
+          strings/{    hxx cxx}{*   -do_ctype -*dump* -*_to_*} \
+            mysql/{h          }{**                           } \
+  libbinlogevents/{h          }{**                           } \
+            mysys/{    hxx cxx}{*             -posix_timers    \
+                                              -kqueue_timers   \
+                                              -my_largepage    \
+                                              -mf_qsort2       \
+                                              -{$mysys_win32}} \
+        mysys_ssl/{    hxx cxx}{*                     -*wolf*} \
+              vio/{    hxx cxx}{*       -*test* -{$vio_win32}} \
+              sql/{    hxx    }{*                            } \
+         sql/auth/{    hxx    }{*                            } \
+         sql/auth/{        cxx}{password sha2_password_common} \
+       sql-common/{    hxx cxx}{*                            } \
+         libmysql/{    hxx cxx}{*                     -*test*}
+
+lib{mysqlclient}: mysys/cxx{posix_timers}:  include = $linux
+lib{mysqlclient}: mysys/cxx{kqueue_timers}: include = ($bsd || $macos)
+
+lib{mysqlclient}:     mysys/{    cxx}{$mysys_win32}                     \
+                        vio/{    cxx}{$vio_win32  }                     \
+libmysql/authentication_win/{hxx cxx}{*           }: include = $windows
+
+lib{mysqlclient}: $imp_libs
+
+libs{mysqlclient}: def{libmysql_exports}: include = $windows
+
+# Makes sense to distribute READMEs for the bundled libraries. Note that their
+# licenses are incorporated into the root LICENSE file.
+#
+lib{mysqlclient}: strings/file{README}
+
+# Include the generated version header into the distribution (so that we
+# don't pick up an installed one) and don't remove it when cleaning in src (so
+# that clean results in a state identical to distributed).
+#
+# @@ We should probably allow to configure MYSQL_UNIX_ADDR via configuration
+#    variable config.libmysqlclient.unix_addr. Note that it is set differently
+#    for the upstream package and major Linux distributions:
+#
+#    Debian/Ubuntu:  /var/run/mysqld/mysqld.sock
+#    Fedora/RHEL:    /var/lib/mysql/mysql.sock
+#    Source package: /tmp/mysql.sock
+#
+h{version}: in{version} $src_root/manifest
+{
+  dist  = true
+  clean = ($src_root != $out_root)
+
+  in.symbol = '@'
+
+  PROTOCOL_VERSION   = $protocol_version
+  VERSION            = $version.project
+  MYSQL_BASE_VERSION = "$version.major.$version.minor"
+
+  MYSQL_SERVER_SUFFIX = '' # Server-related.
+
+  MYSQL_VERSION_ID =                                                     \
+    "\(10000 * $version.major + 100 * $version.minor + $version.patch\)"
+
+  MYSQL_TCP_PORT         = 3306
+  MYSQL_ADMIN_TCP_PORT   = 33062
+  MYSQL_TCP_PORT_DEFAULT = 0
+
+  MYSQL_UNIX_ADDR = ($windows ? '' : /tmp/mysql.sock)
+
+  COMPILATION_COMMENT        = 'Source distribution'
+  COMPILATION_COMMENT_SERVER = 'Source distribution' # Server-related.
+
+  SYS_SCHEMA_VERSION = '2.0.0' # Server-related.
+}
+
+h{config}: in{config}
+{
+  MYSQL_VERSION_MAJOR = $version.major
+  MYSQL_VERSION_MINOR = $version.minor
+
+  MACHINE_TYPE = $c.target.cpu
+  SYSTEM_TYPE  = $tsys
+
+  # These directories are used as a last resort where MySQL tries to find its
+  # files.
+  #
+  # Note that the upstream package doesn't support dynamic resolution of
+  # relative DEFAULT_BASEDIR, PLUGINDIR, and SHAREDIR at runtime (against the
+  # library path or some such). Thus, for the relocatable installation we
+  # proceed in the same way as if install.root is [null].
+  #
+  DEFAULT_BASEDIR = ($install.root != [null] && !$install.relocatable    \
+                     ? $regex.replace("$install.resolve($install.root)", \
+                                      '\\',                              \
+                                      '/')                               \
+                     : '')
+
+  PLUGINDIR = ($install.root != [null] && !$install.relocatable              \
+               ? $regex.replace($install.resolve($install.lib)/mysql/plugin, \
+                                '\\',                                        \
+                                '/')                                         \
+               : '')
+
+  SHAREDIR = ($install.root != [null] && !$install.relocatable                   \
+              ? $regex.replace($install.resolve($install.data_root)/share/mysql, \
+                               '\\',                                             \
+                               '/')                                              \
+              : '')
+}
+
+# Build options.
+#
+# We have dropped the macro definitions that are not used in the package code:
+#
+#   -DRAPIDJSON_NO_SIZETYPEDEFINE
+#   -DUNISTR_FROM_CHAR_EXPLICIT=explicit
+#   -DUNISTR_FROM_STRING_EXPLICIT=explicit
+#   -DHAVE_LIBEVENT2
+#   -DNO_FSEEKO
+#
+cc.poptions += -DHAVE_CONFIG_H        \
+               -DHAVE_OPENSSL         \
+               -D__STDC_LIMIT_MACROS  \
+               -D__STDC_FORMAT_MACROS \
+               -D_USE_MATH_DEFINES    \
+               -DDBUG_OFF
+
+switch $tclass
+{
+  case 'windows'
+    cc.poptions += -DWIN32 -D_WINDOWS -D_WIN32_WINNT=0x0601 -DNOGDI \
+                   -DNOMINMAX -DWIN32_LEAN_AND_MEAN -D_MBCS
+
+  case 'linux'
+    cc.poptions += -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE
+
+  default
+    cc.poptions += -D_FILE_OFFSET_BITS=64
+}
+
+# Note that we add "-I$src_root" for the headers auto-generating machinery to
+# work properly.
+#
+cc.poptions =+ "-I$out_root" "-I$src_root" "-I$src_base" "-I$src_base/mysql"
+
+# To keep "-I$out_root" "-I$src_root" first we use '+=', rather than '=+' to
+# append poptions for the directory scopes.
+#
+strings/ cc.poptions += -DDISABLE_MYSQL_THREAD_H
+
+libbinlogevents_dir = $src_base/libbinlogevents
+
+mysys/ cc.poptions += "-I$libbinlogevents_dir/export"
+
+libmysql/ cc.poptions += "-I$libbinlogevents_dir/export" \
+                         -DCLIENT_PROTOCOL_TRACING
+
+sql-common/ cc.poptions += "-I$libbinlogevents_dir/export"  \
+                           "-I$libbinlogevents_dir/include"
+
+if $windows
+{
+  sql-common/ cc.poptions += -DAUTHENTICATION_WIN
+
+  # The upstream package always adds -DDEBUG_ERRROR_LOG -DWINAUTH_USE_DBUG_LIB.
+  # Looks like they are required for debugging only, so let's omit them.
+  #
+  libmysql/authentication_win/ cc.poptions += -DSECURITY_WIN32
+}
+
+switch $c.class
+{
+  case 'gcc'
+  {
+    cc.coptions += -ffunction-sections -fdata-sections -fno-omit-frame-pointer
+
+    # Disable warnings that pop up with -Wall -Wextra. Upstream doesn't seem to
+    # care about these and it is not easy to disable specific warnings in a way
+    # that works across compilers/version (some -Wno-* options are only
+    # recognized in newer versions). There are still some warnings left that
+    # appear for certain platforms/compilers. We pass them through but disable
+    # treating them as errors.
+    #
+    cc.coptions += -Wno-all -Wno-extra -Wno-error
+
+    # Disable the Clang targeting MSVC warnings.
+    #
+    if ($c.id == 'clang' && $tsys == 'win32-msvc')
+      cc.coptions += -Wno-deprecated-declarations
+  }
+  case 'msvc'
+  {
+    cc.coptions += /GS /fp:precise /Zc:wchar_t /Zc:forScope
+
+    # Disable warnings that pop up with /W3.
+    #
+    cc.coptions += /wd4018 /wd4068 /wd4091 /wd4101 /wd4146 /wd4244 /wd4267 \
+                   /wd4477 /wd4700 /wd4805 /wd4996
+  }
+}
+
+switch $tclass, $tsys
+{
+  case 'windows', 'mingw32'
+    cc.libs += -lws2_32 -ldbghelp -lsecur32 -ladvapi32
+
+  case 'windows'
+    cc.libs += advapi32.lib # Note: rest linked via pragmas.
+
+  case 'linux'
+  {
+    # The upstream package also passes the cmake-generated libmysql.ver file.
+    # The symbols it contains are hard-coded into libmysql/CMakeList.txt. We
+    # have dropped the file for now.
+    #
+    # Make sure all symbols are resolvable.
+    #
+    cc.loptions += -Wl,--no-undefined
+
+    cc.libs += -ldl -lm -lrt -pthread
+  }
+
+  case 'bsd'
+    cc.libs += -lexecinfo -lm -pthread
+
+  default
+    cc.libs += -ldl -lm -pthread
+}
+
+# Export options.
+#
+# The library clients must include the API header as <mysql/mysql.h>.
+#
+lib{mysqlclient}: cc.export.poptions = "-I$out_root"                   \
+                                       "-I$src_root"                   \
+                                       "-I$src_base"                   \
+                                       "-I$src_base/mysql"             \
+                                       "-I$libbinlogevents_dir/export"
+
+# See bootstrap.build for details.
+#
+if $version.pre_release
+  lib{mysqlclient}: bin.lib.version = @"-$version.project_id"
+else
+  lib{mysqlclient}: bin.lib.version = @"-$abi_version"
+
+# Let's install the bare minimum of headers: mysql.h, errmsg.h, mysqld_error.h
+# and headers they recursively include. Install them into the mysql/
+# subdirectory of, say, /usr/include/.
+#
+h{*}:   install = false
+hxx{*}: install = false
+
+# Install mysql/ sub-entries recreating subdirectories.
+#
+for h: mysql/{errmsg my_command my_list mysql_com mysql mysql_time \
+              mysql/{client_plugin plugin_auth_common}}
+{
+  d = $path.directory($h)
+
+  h{$h}@$d: install = include/$d
+}
+
+# Install the remaining headers not recreating subdirectories.
+#
+for h: mysqld_error mysql_version libbinlogevents/export/binary_log_types \
+       mysql/mysql/udf_registration_types
+{
+  h{$h}@./$path.directory($h): install = include/mysql/
+}
+
+h{version}: install = include/mysql/

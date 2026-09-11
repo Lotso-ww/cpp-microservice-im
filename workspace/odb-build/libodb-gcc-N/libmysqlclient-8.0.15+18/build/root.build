@@ -1,0 +1,25 @@
+# file      : build/root.build
+# license   : GPLv2 with Universal FOSS Exception; see accompanying LICENSE file
+
+using in
+
+using c
+
+h{*}: extension = h
+c{*}: extension = c
+
+# Note that the implementation uses C++14 internally, with some used
+# constructs being deprecated/removed from the later versions of the standard.
+#
+cxx.std = 14
+
+using cxx
+
+hxx{*}: extension = h
+cxx{*}: extension = cc
+
+if ($c.target.system == 'win32-msvc')
+  cc.poptions += -D_CRT_SECURE_NO_WARNINGS -D_SCL_SECURE_NO_WARNINGS
+
+if ($c.class == 'msvc')
+  cc.coptions += /wd4251 /wd4275 /wd4800

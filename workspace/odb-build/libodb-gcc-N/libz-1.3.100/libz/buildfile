@@ -1,0 +1,78 @@
+# file      : libz/buildfile
+# license   : zlib License; see accompanying LICENSE file
+
+lib{z}: {h c}{* -zconf} h{zconf}
+
+tclass = $c.target.class
+tsys   = $c.target.system
+
+linux   = ($tclass == 'linux')
+bsd     = ($tclass == 'bsd')
+windows = ($tclass == 'windows')
+
+libs{z}: file{zlib.map}: include = ($linux || $bsd ? adhoc : false)
+libs{z}: def{zlib}:      include = $windows
+
+# Include the generated config header into the distribution (so that we don't
+# pick up an installed one) and don't remove it when cleaning in src (so that
+# clean results in a state identical to distributed).
+#
+h{zconf}: in{zconf}
+{
+  dist  = true
+  clean = ($src_root != $out_root)
+
+  in.symbol       = '@'
+  in.substitution = lax
+
+  HAVE_UNISTD_H = ($windows ? 0 : 1)
+  HAVE_STDARG_H = ($windows ? 0 : 1)
+}
+
+# Build options.
+#
+if! $windows
+  c.poptions += -DHAVE_HIDDEN
+
+switch $tclass, $tsys
+{
+  case 'linux' | 'bsd'
+    c.poptions += -D_LARGEFILE64_SOURCE=1
+
+  case 'windows', 'win32-msvc'
+    c.poptions += -D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE
+}
+
+# Note that we add "-I$src_base" for the headers auto-generating machinery to
+# work properly.
+#
+c.poptions =+ "-I$out_base" "-I$src_base"
+
+switch $tclass
+{
+  case 'linux' | 'bsd'
+  {
+    # Make sure all symbols are resolvable.
+    #
+    c.loptions += -Wl,--no-undefined
+
+    c.loptions += "-Wl,--version-script=$src_base/zlib.map"
+  }
+}
+
+# Export options.
+#
+lib{z}: cc.export.poptions = "-I$out_base" "-I$src_base"
+
+# See bootstrap.build for details.
+#
+if $version.pre_release
+  lib{z}: bin.lib.version = @"-$version.project_id"
+else
+  lib{z}: bin.lib.version = @"-$abi_version_major" linux@"$abi_version"
+
+# Install the bare minimum of headers (note: not recreating subdirectories).
+#
+h{*}:       install = false
+h{zconf}:   install = include/
+h{zlib}@./: install = include/

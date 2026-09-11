@@ -1,0 +1,84 @@
+.\" Process this file with
+.\" groff -man -Tascii odb.1
+.\"
+.TH ODB 1 "January 2025" "ODB 2.5.0"
+.SH NAME
+odb \- object-relational mapping (ORM) compiler for C++
+.\"
+.\"
+.\"
+.\"--------------------------------------------------------------------
+.SH SYNOPSIS
+.\"--------------------------------------------------------------------
+.B odb
+.B [
+.I options
+.B ]
+.I file
+.B [
+.IR file...
+.B ]
+.\"
+.\"
+.\"
+.\"--------------------------------------------------------------------
+.SH DESCRIPTION
+.\"--------------------------------------------------------------------
+Given a set of C++ classes in a header file,
+.B odb
+generates C++ code that allows you to persist, query, and update objects
+of these classes in a relational database (RDBMS). The relational
+database that the generated code should target is specified with the
+required
+.B --database
+option (see below).
+
+
+For an input file in the form
+.B name.hxx
+(other file extensions can be used instead of
+.BR .hxx ),
+in the single-database mode (the default), the generated C++ files by
+default have the following names:
+.B name-odb.hxx
+(header file),
+.B name-odb.ixx
+(inline file), and
+.B name-odb.cxx
+(source file). Additionally, if the
+.B --generate-schema
+option is specified and the
+.B sql
+schema format is requested (see
+.BR --schema-format ),
+the
+.B name.sql
+database schema file is generated. If the
+.B separate
+schema format is requested, the database creation code is generated into
+the separate
+.B name-schema.cxx
+file.
+
+
+In the multi-database mode (see the
+.B --multi-database
+option below), the generated files corresponding to the
+.B common
+database have the same names as in the single-database mode. For other
+databases, the file names include the database name:
+.BR name-odb-\fIdb\fB.hxx ,
+.BR name-odb-\fIdb\fB.ixx ,
+.BR name-odb-\fIdb\fB.cxx ,
+.BR name-\fIdb\fB.sql ,
+and
+.B name-schema-\fIdb\fB.cxx
+(where
+.I db
+is the database name).
+.\"
+.\"
+.\"
+.\"--------------------------------------------------------------------
+.SH OPTIONS
+.\"--------------------------------------------------------------------

@@ -1,0 +1,16 @@
+# file      : tests/build/root.build
+# license   : GNU GPL v3; see accompanying LICENSE file
+
+# We need to configure C++ module to obtain the target information (see
+# below).
+#
+using cxx.config
+
+# Import the ODB compiler we will be testing.
+#
+import! [metadata] odb = odb%exe{odb}
+testscript{*}: test = $odb
+
+# Specify the test target for cross-testing.
+#
+test.target = $cxx.target

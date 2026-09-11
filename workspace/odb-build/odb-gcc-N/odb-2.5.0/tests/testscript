@@ -1,0 +1,21 @@
+# file      : tests/testscript
+# license   : GNU GPL v3; see accompanying LICENSE file
+
+: version
+:
+$* --version >>~/EOO/
+/ODB object-relational mapping \(ORM\) compiler for C\+\+ .+/
+/.*/*
+EOO
+
+: plugin
+:
+: To actually compile anything we need libodb. However, we can smoke-test the
+: plugin loading and invocation using the --trace option that suppresses the
+: standard prologue/epilogue (which includes the libodb headers).
+:
+cat <'// dummy' >=dummy.hxx;
+$* -d sqlite --trace dummy.hxx 2>>~/EOE/ != 0
+/.*/*
+dummy.hxx: error: unable to resolve odb namespace
+EOE

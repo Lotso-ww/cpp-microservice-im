@@ -1,0 +1,40 @@
+# file      : build/bootstrap.build
+# license   : GPLv2 with Universal FOSS Exception; see accompanying LICENSE file
+
+project = libmysqlclient
+
+using version
+using config
+using dist
+using test
+using install
+
+# The MySQL client library ABI version number has the <major>.<minor>.<patch>
+# form. The major number is increased for backwards-incompatible API changes,
+# the minor number for backwards-compatible ones (for example, for adding a new
+# function), and the patch number is typically increased for each package
+# release, being in a sense redundant. Increase of the version component resets
+# the rightmost ones to zero. See also:
+#
+# http://mysqlserverteam.com/the-client-library-part-2-the-version-number/
+#
+# There is no way to deduce the ABI version from the release version, so we
+# obtain the ABI version from the SHARED_LIB_MAJOR_VERSION variable value in
+# upstream/cmake/mysql_version.cmake for each package release. Also, while at
+# it, check that the protocol version is still correct (the PROTOCOL_VERSION
+# variable).
+#
+# See also how Debian/Fedora package libmysqlclient if trying to wrap your head
+# around this mess.
+#
+if ($version.major == 8 && $version.minor == 0 && $version.patch == 15)
+{
+  # @@ Should we also use the ABI minor version to make sure the library is
+  #    also forward-compatible?
+  #
+  abi_version = 21
+
+  protocol_version = 10
+}
+else
+  fail "increment the ABI version?"

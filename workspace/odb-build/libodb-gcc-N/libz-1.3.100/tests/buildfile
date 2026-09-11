@@ -1,0 +1,4 @@
+# file      : tests/buildfile
+# license   : zlib License; see accompanying LICENSE file
+
+./: {*/ -build/}

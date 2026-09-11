@@ -1,0 +1,12 @@
+# file      : tests/minigzip/testscript
+# license   : zlib License; see accompanying LICENSE file
+
+s='abcdefghijklmnopqrstuvwxz0123456789'
+s="$s$s$s$s$s$s$s$s$s$s$s$s$s$s$s$s$s$s$s$s$s$s$s$s$s$s$s$s$s$s$s$s$s$s$s$s$s"
+s="$s$s$s$s$s$s$s$s$s$s$s$s$s$s$s$s$s$s$s$s$s$s$s$s$s$s$s$s$s$s$s$s$s$s$s$s$s"
+
+
+$* -9 <"$s" | $* -d -c >"$s" : max-compression
+$* -f <"$s" | $* -d -c >"$s" : filtered
+$* -h <"$s" | $* -d -c >"$s" : huffman
+$* -r <"$s" | $* -d -c >"$s" : rle

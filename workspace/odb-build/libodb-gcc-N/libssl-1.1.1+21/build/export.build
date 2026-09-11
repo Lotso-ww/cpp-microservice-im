@@ -1,0 +1,9 @@
+# file      : build/root.build
+# license   : OpenSSL and SSLeay Licenses; see accompanying LICENSE file
+
+$out_root/
+{
+  include libssl/
+}
+
+export $out_root/libssl/$import.target

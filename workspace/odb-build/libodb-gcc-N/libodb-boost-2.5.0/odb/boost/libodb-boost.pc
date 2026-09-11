@@ -1,0 +1,7 @@
+Name: libodb-boost
+Version: 2.5.0
+Description: Boost ODB profile library
+URL: https://www.codesynthesis.com/products/odb/
+Cflags: -I/usr/include
+Libs: -L/usr/lib -lodb-boost -lodb
+Libs.private:

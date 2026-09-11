@@ -1,0 +1,143 @@
+# file      : libssl/buildfile
+# license   : OpenSSL and SSLeay Licenses; see accompanying LICENSE file
+
+import int_libs = libcrypto%lib{crypto}
+
+lib{ssl}: {h c}{**} $int_libs
+
+tclass = $c.target.class
+tsys   = $c.target.system
+
+linux   = ($tclass == 'linux')
+bsd     = ($tclass == 'bsd')
+windows = ($tclass == 'windows')
+
+libs{ssl}: file{libssl.map}: include = ($linux || $bsd ? adhoc : false)
+libs{ssl}: def{libssl}:      include = $windows
+
+# Build options.
+#
+# Note that libssl doesn't use zlib directly. However, it may use
+# functionality that libcrypto additionally provides when zlib is enabled.
+#
+# Also note that upstream also passes -DNDEBUG. Let's omit it for now to
+# enable assertions to gain some extra confidence that we didn't break
+# anything while packaging.
+#
+c.poptions += -DZLIB
+
+# Drop -DOPENSSL_PIC, -D{L|B}_ENDIAN, -DOPENSSLDIR and -DENGINESDIR as they
+# are not used in the libssl source code nor in the libcrypto public headers.
+#
+# Note that the upstream package uses the -pthread compiler/linker option on
+# Linux and FreeBSD. The option is unsupported by build2 so we pass
+# -D_REENTRANT and -lpthread preprocessor/linker options instead.
+#
+# Also note that on FreeBSD and Mac OS the upstream package also passes
+# -D_REENTRANT.
+#
+if ($tclass != 'windows')
+  c.poptions += -D_REENTRANT
+else
+  c.poptions += -DWIN32_LEAN_AND_MEAN -DUNICODE -D_UNICODE
+
+switch $tclass, $tsys
+{
+  case 'linux'
+    c.poptions += -DOPENSSL_USE_NODELETE
+
+  case 'bsd'
+    c.poptions += -D_THREAD_SAFE
+
+  case 'windows', 'mingw32'
+    c.poptions += -D_MT
+
+  case 'windows'
+  {
+    # Note that upstream also passes -DOPENSSL_USE_APPLINK if compiled with
+    # VC. We drop this option (see libcrypto/buildfile) for details.
+    #
+    c.poptions += -DOPENSSL_SYS_WIN32 -D_CRT_SECURE_NO_DEPRECATE \
+                  -D_WINSOCK_DEPRECATED_NO_WARNINGS
+  }
+}
+
+switch $c.class
+{
+  case 'gcc'
+  {
+    if ($c.target.cpu == 'i686')
+      c.coptions += -fomit-frame-pointer
+
+    # Disable warnings that pop up with -Wall -Wextra. Upstream doesn't seem
+    # to care about these and it is not easy to disable specific warnings in a
+    # way that works across compilers/versions (some -Wno-* options are only
+    # recognized in newer versions). There are still some warnings left that
+    # appear for certain platforms/compilers. We pass them through but disable
+    # treating them as errors.
+    #
+    c.coptions += -Wno-all -Wno-extra -Wno-error
+  }
+  case 'msvc'
+  {
+    c.coptions += /Gs0 /GF /Gy
+
+    # Disable warnings that pop up with /W3.
+    #
+    c.coptions += /wd4090 /wd4133 /wd4244 /wd4267
+  }
+}
+
+c.poptions =+ "-I$src_base"
+
+switch $tclass, $tsys
+{
+  case 'linux'
+  {
+    c.loptions += -Wl,-znodelete -Wl,-Bsymbolic               \
+                  "-Wl,--version-script=$src_base/libssl.map"
+
+    c.libs += -ldl -lpthread
+  }
+  case 'bsd'
+  {
+    c.loptions += -Wl,-Bsymbolic                              \
+                  "-Wl,--version-script=$src_base/libssl.map"
+
+    c.libs += -lpthread
+  }
+  case 'windows', 'mingw32'
+  {
+    # Note that for MinGW GCC the upstream package also passes -static-libgcc.
+    # We normally don't link GCC run-time statically when packaging other C
+    # libraries, so let's not do that here either and see how it goes.
+    #
+    c.loptions += -Wl,--enable-auto-image-base
+
+    c.libs += -lws2_32 -lgdi32 -lcrypt32
+  }
+  case 'windows'
+  {
+    c.libs += ws2_32.lib gdi32.lib crypt32.lib advapi32.lib
+  }
+}
+
+# Export options.
+#
+lib{ssl}:
+{
+  cc.export.poptions = "-I$src_base"
+  cc.export.libs = $int_libs
+}
+
+# See bootstrap.build for details.
+#
+if $version.pre_release
+  lib{ssl}: bin.lib.version = @"-$version.project_id"
+else
+  lib{ssl}: bin.lib.version = @"-$abi_version"
+
+# Install headers from the upstream openssl/ subdirectory only.
+#
+h{*}:         install = false
+openssl/h{*}: install = include/openssl/

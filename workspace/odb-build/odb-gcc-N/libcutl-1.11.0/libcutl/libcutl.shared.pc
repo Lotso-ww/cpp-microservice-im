@@ -1,0 +1,10 @@
+Name: libcutl
+Version: 1.11.0
+Description: C++ utility library for compilers
+URL: https://www.codesynthesis.com/projects/libcutl/
+Cflags: -I/usr/include -DLIBCUTL_SHARED
+Libs: -L/usr/lib -lcutl
+
+build2.metadata = 1
+
+cc.type = cxx

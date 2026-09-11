@@ -1,0 +1,88 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+
+<head>
+  <title>ODB 2.5.0 Compiler Command Line Manual</title>
+
+  <meta name="copyright" content="&#169; $copyright$"/>
+  <meta name="keywords" content="odb,object,relational,mapping,compiler,c++"/>
+  <meta name="description" content="ODB Compiler Command Line Manual"/>
+
+  <link rel="stylesheet" type="text/css" href="default.css" />
+
+<style type="text/css">
+
+  #synopsis {
+    list-style-type:  none;
+  }
+
+  #synopsis li {
+    padding-top      : 0.0em;
+    padding-bottom   : 0.0em;
+  }
+
+  .options {
+    margin: 1em 0 1em 0;
+  }
+
+  .options dt {
+    margin: 1em 0 0 0;
+  }
+
+  .options dd {
+    margin: .1em 0 0 4.5em;
+  }
+
+</style>
+</head>
+
+<body>
+<div id="container">
+  <div id="content">
+
+  <h1>NAME</h1>
+
+  <p>odb - object-relational mapping (ORM) compiler for C++</p>
+
+  <h1>SYNOPSIS</h1>
+
+  <dl id="synopsis">
+    <dt><code><b>odb</b> [<i>options</i>] <i>file</i> [<i>file</i>...]</code></dt>
+  </dl>
+
+  <h1>DESCRIPTION</h1>
+
+  <p>Given a set of C++ classes in a header file, <code><b>odb</b></code>
+  generates C++ code that allows you to persist, query, and update objects
+  of these classes in a relational database (RDBMS). The relational
+  database that the generated code should target is specified with the
+  required <code><b>--database</b></code> option (see below).</p>
+
+  <p>For an input file in the form <code><b>name.hxx</b></code> (other
+  file extensions can be used instead of <code><b>.hxx</b></code>),
+  in the single-database mode (the default), the generated C++ files
+  by default have the following names:
+  <code><b>name-odb.hxx</b></code> (header file),
+  <code><b>name-odb.ixx</b></code> (inline file), and
+  <code><b>name-odb.cxx</b></code> (source file).
+
+  Additionally, if the <code><b>--generate-schema</b></code> option is
+  specified and the <code><b>sql</b></code> schema format is requested (see
+  <code><b>--schema-format</b></code>), the <code><b>name.sql</b></code>
+  database schema file is generated. If the <code><b>separate</b></code>
+  schema format is requested, the database creation code is generated
+  into the separate <code><b>name-schema.cxx</b></code> file.</p>
+
+  <p>In the multi-database mode (see the <code><b>--multi-database</b></code>
+     option below), the generated files corresponding to the
+     <code><b>common</b></code> database have the same names as in the
+     single-database mode. For other databases, the file names include
+     the database name:
+     <code><b>name-odb-</b><i>db</i><b>.hxx</b></code>,
+     <code><b>name-odb-</b><i>db</i><b>.ixx</b></code>,
+     <code><b>name-odb-</b><i>db</i><b>.cxx</b></code>,
+     <code><b>name-</b><i>db</i><b>.sql</b></code>, and
+     <code><b>name-schema-</b><i>db</i><b>.cxx</b></code>
+     (where <code><i>db</i></code> is the database name).</p>
+
+  <h1>OPTIONS</h1>

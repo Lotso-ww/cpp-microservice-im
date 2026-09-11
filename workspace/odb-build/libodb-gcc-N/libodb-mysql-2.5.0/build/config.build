@@ -1,0 +1,9 @@
+# Created automatically by the config module, but feel free to edit.
+#
+config.version = 1
+
+# Base configuration inherited from ../
+#
+
+config.libodb_mysql.mysql_client = false
+config.libodb_mysql.client_lib = mysql
