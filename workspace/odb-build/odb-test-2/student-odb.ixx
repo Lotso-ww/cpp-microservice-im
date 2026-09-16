@@ -75,6 +75,18 @@ namespace odb
     ODB_POTENTIALLY_UNUSED (x);
     ODB_POTENTIALLY_UNUSED (e);
   }
+
+  // all_name
+  //
+
+  inline
+  void access::view_traits< ::all_name >::
+  callback (database& db, view_type& x, callback_event e)
+  {
+    ODB_POTENTIALLY_UNUSED (db);
+    ODB_POTENTIALLY_UNUSED (x);
+    ODB_POTENTIALLY_UNUSED (e);
+  }
 }
 
 namespace odb
@@ -124,6 +136,9 @@ namespace odb
   }
 
   // classes_student
+  //
+
+  // all_name
   //
 }
 

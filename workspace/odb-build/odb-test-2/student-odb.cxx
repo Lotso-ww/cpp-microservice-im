@@ -1467,31 +1467,31 @@ namespace odb
 
     bool grew (false);
 
-    // _id
+    // id
     //
     t[0UL] = 0;
 
-    // _sn
+    // sn
     //
     t[1UL] = 0;
 
-    // _name
+    // name
     //
     if (t[2UL])
     {
-      i._name_value.capacity (i._name_size);
+      i.name_value.capacity (i.name_size);
       grew = true;
     }
 
-    // _age
+    // age
     //
     t[3UL] = 0;
 
-    // _classes_name
+    // classes_name
     //
     if (t[4UL])
     {
-      i._classes_name_value.capacity (i._classes_name_size);
+      i.classes_name_value.capacity (i.classes_name_size);
       grew = true;
     }
 
@@ -1509,48 +1509,48 @@ namespace odb
 
     std::size_t n (0);
 
-    // _id
+    // id
     //
     b[n].buffer_type = MYSQL_TYPE_LONGLONG;
     b[n].is_unsigned = 1;
-    b[n].buffer = &i._id_value;
-    b[n].is_null = &i._id_null;
+    b[n].buffer = &i.id_value;
+    b[n].is_null = &i.id_null;
     n++;
 
-    // _sn
+    // sn
     //
     b[n].buffer_type = MYSQL_TYPE_LONGLONG;
     b[n].is_unsigned = 1;
-    b[n].buffer = &i._sn_value;
-    b[n].is_null = &i._sn_null;
+    b[n].buffer = &i.sn_value;
+    b[n].is_null = &i.sn_null;
     n++;
 
-    // _name
+    // name
     //
     b[n].buffer_type = MYSQL_TYPE_STRING;
-    b[n].buffer = i._name_value.data ();
+    b[n].buffer = i.name_value.data ();
     b[n].buffer_length = static_cast<unsigned long> (
-      i._name_value.capacity ());
-    b[n].length = &i._name_size;
-    b[n].is_null = &i._name_null;
+      i.name_value.capacity ());
+    b[n].length = &i.name_size;
+    b[n].is_null = &i.name_null;
     n++;
 
-    // _age
+    // age
     //
     b[n].buffer_type = MYSQL_TYPE_SHORT;
     b[n].is_unsigned = 1;
-    b[n].buffer = &i._age_value;
-    b[n].is_null = &i._age_null;
+    b[n].buffer = &i.age_value;
+    b[n].is_null = &i.age_null;
     n++;
 
-    // _classes_name
+    // classes_name
     //
     b[n].buffer_type = MYSQL_TYPE_STRING;
-    b[n].buffer = i._classes_name_value.data ();
+    b[n].buffer = i.classes_name_value.data ();
     b[n].buffer_length = static_cast<unsigned long> (
-      i._classes_name_value.capacity ());
-    b[n].length = &i._classes_name_size;
-    b[n].is_null = &i._classes_name_null;
+      i.classes_name_value.capacity ());
+    b[n].length = &i.classes_name_size;
+    b[n].is_null = &i.classes_name_null;
     n++;
   }
 
@@ -1563,76 +1563,76 @@ namespace odb
     ODB_POTENTIALLY_UNUSED (i);
     ODB_POTENTIALLY_UNUSED (db);
 
-    // _id
+    // id
     //
     {
       long unsigned int& v =
-        o._id;
+        o.id;
 
       mysql::value_traits<
           long unsigned int,
           mysql::id_ulonglong >::set_value (
         v,
-        i._id_value,
-        i._id_null);
+        i.id_value,
+        i.id_null);
     }
 
-    // _sn
+    // sn
     //
     {
       long unsigned int& v =
-        o._sn;
+        o.sn;
 
       mysql::value_traits<
           long unsigned int,
           mysql::id_ulonglong >::set_value (
         v,
-        i._sn_value,
-        i._sn_null);
+        i.sn_value,
+        i.sn_null);
     }
 
-    // _name
+    // name
     //
     {
       ::std::string& v =
-        o._name;
+        o.name;
 
       mysql::value_traits<
           ::std::string,
           mysql::id_string >::set_value (
         v,
-        i._name_value,
-        i._name_size,
-        i._name_null);
+        i.name_value,
+        i.name_size,
+        i.name_null);
     }
 
-    // _age
+    // age
     //
     {
       ::odb::nullable< short unsigned int >& v =
-        o._age;
+        o.age;
 
       mysql::value_traits<
           ::odb::nullable< short unsigned int >,
           mysql::id_ushort >::set_value (
         v,
-        i._age_value,
-        i._age_null);
+        i.age_value,
+        i.age_null);
     }
 
-    // _classes_name
+    // classes_name
     //
     {
       ::std::string& v =
-        o._classes_name;
+        o.classes_name;
 
       mysql::value_traits<
           ::std::string,
           mysql::id_string >::set_value (
         v,
-        i._classes_name_value,
-        i._classes_name_size,
-        i._classes_name_null);
+        i.classes_name_value,
+        i.classes_name_size,
+        i.classes_name_null);
     }
   }
 
@@ -1651,11 +1651,11 @@ namespace odb
     r += "FROM `Student`";
 
     r += " LEFT JOIN `Classes` AS `classes` ON";
-    // From student.hxx:58:17
+    // From student.hxx:57:17
     r += query_columns::Student::classes_id == query_columns::classes::id;
 
     query_base_type c (
-      // From student.hxx:59:17
+      // From student.hxx:58:17
       (q.empty () ? query_base_type::true_expr : q));
 
     c.optimize ();
@@ -1672,6 +1672,136 @@ namespace odb
 
   result< access::view_traits_impl< ::classes_student, id_mysql >::view_type >
   access::view_traits_impl< ::classes_student, id_mysql >::
+  query (database& db, const query_base_type& q)
+  {
+    using namespace mysql;
+    using odb::details::shared;
+    using odb::details::shared_ptr;
+
+    mysql::connection& conn (
+      mysql::transaction::current ().connection (db));
+    statements_type& sts (
+      conn.statement_cache ().find_view<view_type> ());
+
+    image_type& im (sts.image ());
+    binding& imb (sts.image_binding ());
+
+    if (im.version != sts.image_version () || imb.version == 0)
+    {
+      bind (imb.bind, im);
+      sts.image_version (im.version);
+      imb.version++;
+    }
+
+    const query_base_type& qs (query_statement (q));
+    qs.init_parameters ();
+    shared_ptr<select_statement> st (
+      new (shared) select_statement (
+        conn,
+        qs.clause (),
+        false,
+        true,
+        qs.parameters_binding (),
+        imb));
+
+    st->execute ();
+
+    shared_ptr< odb::view_result_impl<view_type> > r (
+      new (shared) mysql::view_result_impl<view_type> (
+        qs, st, sts, 0));
+
+    return result<view_type> (r);
+  }
+
+  // all_name
+  //
+
+  bool access::view_traits_impl< ::all_name, id_mysql >::
+  grow (image_type& i,
+        my_bool* t)
+  {
+    ODB_POTENTIALLY_UNUSED (i);
+    ODB_POTENTIALLY_UNUSED (t);
+
+    bool grew (false);
+
+    // name
+    //
+    if (t[0UL])
+    {
+      i.name_value.capacity (i.name_size);
+      grew = true;
+    }
+
+    return grew;
+  }
+
+  void access::view_traits_impl< ::all_name, id_mysql >::
+  bind (MYSQL_BIND* b,
+        image_type& i)
+  {
+    using namespace mysql;
+
+    mysql::statement_kind sk (statement_select);
+    ODB_POTENTIALLY_UNUSED (sk);
+
+    std::size_t n (0);
+
+    // name
+    //
+    b[n].buffer_type = MYSQL_TYPE_STRING;
+    b[n].buffer = i.name_value.data ();
+    b[n].buffer_length = static_cast<unsigned long> (
+      i.name_value.capacity ());
+    b[n].length = &i.name_size;
+    b[n].is_null = &i.name_null;
+    n++;
+  }
+
+  void access::view_traits_impl< ::all_name, id_mysql >::
+  init (view_type& o,
+        const image_type& i,
+        database* db)
+  {
+    ODB_POTENTIALLY_UNUSED (o);
+    ODB_POTENTIALLY_UNUSED (i);
+    ODB_POTENTIALLY_UNUSED (db);
+
+    // name
+    //
+    {
+      ::std::string& v =
+        o.name;
+
+      mysql::value_traits<
+          ::std::string,
+          mysql::id_string >::set_value (
+        v,
+        i.name_value,
+        i.name_size,
+        i.name_null);
+    }
+  }
+
+  access::view_traits_impl< ::all_name, id_mysql >::query_base_type
+  access::view_traits_impl< ::all_name, id_mysql >::
+  query_statement (const query_base_type& q)
+  {
+    query_base_type r (
+      "select name from Student");
+
+    if (!q.empty ())
+    {
+      r += " ";
+      r += q.clause_prefix ();
+      r += q;
+    }
+
+    return r;
+  }
+
+  result< access::view_traits_impl< ::all_name, id_mysql >::view_type >
+  access::view_traits_impl< ::all_name, id_mysql >::
   query (database& db, const query_base_type& q)
   {
     using namespace mysql;

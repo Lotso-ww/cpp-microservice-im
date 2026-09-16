@@ -2,7 +2,6 @@
 #include <cpr/unix_socket.h>
 #include <odb/forward.hxx>
 #include <string>
-#include <cstddef>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <odb/nullable.hxx>
 #include <odb/core.hxx>
@@ -59,14 +58,28 @@ private:
                 query((?))
 struct classes_student{
     #pragma db column(Student::_id)
-    unsigned long _id;
+    unsigned long id;
     #pragma db column(Student::_sn)
-    unsigned long _sn;
+    unsigned long sn;
     #pragma db column(Student::_name)
-    std::string _name;
+    std::string name;
     #pragma db column(Student::_age)
-    odb::nullable<unsigned short> _age;
+    odb::nullable<unsigned short> age;
     #pragma db column(classes::_name)
-    std::string _classes_name;
+    std::string classes_name;
 };
 
+// 只查询学生姓名, (?) 外部调用时传入的过滤条件
+// #pragma db view query("select name from Student")
+// struct all_name 
+// {
+//     std::string name;
+// };
+
+// 加条件
+#pragma db view query("select name from Student" + (?));
+struct all_name {
+    std::string name;
+};
+
+// odb -d mysql --std c++11 --generate-query --generate-schema --profile boost/date-time student.hxx

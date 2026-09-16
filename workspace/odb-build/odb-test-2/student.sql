@@ -2,8 +2,6 @@
  * compiler for C++.
  */
 
-USE my_im;
-
 DROP TABLE IF EXISTS `Classes`;
 
 DROP TABLE IF EXISTS `Student`;

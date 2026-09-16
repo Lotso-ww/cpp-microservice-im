@@ -1,6 +1,8 @@
 #include <exception>
+#include <iostream>
 #include <memory>
 #include <odb/database.hxx>
+#include <odb/exceptions.hxx>
 #include <odb/mysql/connection-factory.hxx>
 #include <odb/mysql/connection.hxx>
 #include <odb/mysql/database.hxx>
@@ -8,7 +10,11 @@
 #include "student-odb.hxx"
 #include <gflags/gflags.h>
 #include <odb/mysql/transaction-impl.hxx>
+#include <odb/query.hxx>
+#include <odb/result.hxx>
 #include <odb/transaction.hxx>
+#include <ostream>
+#include <random>
 #include <utility>
 
  
@@ -66,6 +72,115 @@ void insert_student(odb::mysql::database &db)
     }
 }
 
+Student select_student(odb::mysql::database &db)
+{
+    Student res;
+    try 
+    {
+        // 获取事务对象开启事务
+        odb::transaction trans(db.begin());
+        typedef odb::query<Student> query;
+        typedef odb::result<Student> result;
+        // db.query 是模板函数， 必须显式指定`<Student>` ，编译器无法从条件表达式推导模板参数：
+        result r(db.query<Student>(query::name == "张三")); 
+        if(r.size() != 1)
+        {
+            std::cout << "数据量不对! " << std::endl;
+            return Student();
+        }
+        res = *r.begin();
+        // 提交事务
+        trans.commit();
+    }
+    catch(std::exception &e)
+    {
+        std::cout << "查询学生数据出错: " << e.what() << std::endl;
+    }
+    return res;
+}
+
+void update_student(odb::mysql::database &db, Student &stu)
+{
+    try 
+    {
+        // 获取事务对象开启事务
+        odb::transaction trans(db.begin());
+        db.update(stu);
+        // 提交事务
+        trans.commit();
+    }
+    catch (std::exception & e) 
+    {
+        std::cout << "更新学生数据出错: " << e.what() << std::endl;
+    }
+}
+
+void remove_student(odb::mysql::database &db)
+{
+    try 
+    {
+        // 获取事务对象开启事务
+        odb::transaction trans(db.begin());
+        typedef odb::query<Student> query;
+        // db.erase_query<Student>(query::name == "孙八");
+        db.erase_query<Student>(query::classes_id == 2);
+        trans.commit();
+    } 
+    catch (std::exception &e) 
+    {
+        std::cout << "删除学生数据出错: " << e.what() << std::endl;
+    }
+}
+
+void classes_student(odb::mysql::database &db)
+{
+    try 
+    {
+        // 获取事务对象开启事务
+        odb::transaction trans(db.begin());
+        typedef odb::query<struct classes_student> query;
+        typedef odb::result<struct classes_student> result;
+        result r(db.query<struct classes_student>(query::classes::id == 1));
+        for(auto it = r.begin(); it != r.end(); ++it)
+        {
+            std::cout << it->id << std::endl;
+            std::cout << it->sn << std::endl;
+            std::cout << it->name << std::endl;
+            std::cout << *it->age << std::endl;
+            std::cout << it->classes_name << std::endl;
+        }
+        // 提交事务
+        trans.commit();
+    }
+    catch(std::exception &e)
+    {
+        std::cout << "连表查询数据出错: " << e.what() << std::endl;
+    }
+}
+
+void all_name(odb::mysql::database &db)
+{
+    try 
+    {
+        // 获取事务对象开启事务
+        odb::transaction trans(db.begin());
+        typedef odb::query<Student> query;
+        typedef odb::result<struct all_name> result;
+        // result r(db.query<struct all_name>());
+        result r(db.query<struct all_name>(query::id == 1));
+        for(auto it = r.begin(); it != r.end(); ++it)
+        {
+            std::cout << it->name << std::endl;
+        }
+        // 提交事务
+        trans.commit();
+    } 
+    catch (std::exception &e) 
+    {
+        std::cout << "查询所有学生的姓名数据出错: " << e.what() << std::endl;
+    }
+}
+
 int main(int argc, char* argv[])
 {
     google::ParseCommandLineFlags(&argc, &argv, true);
@@ -78,7 +193,18 @@ int main(int argc, char* argv[])
         FLAGS_port, "", FLAGS_cset, 0, std::move(cpf)
     );
     // 3. 数据操作
-    insert_classes(db);
+    // insert_classes(db);
     // insert_student(db);
+    // auto stu = select_student(db);
+    // std::cout << stu.sn() << std::endl;
+    // std::cout << stu.name() << std::endl;
+    // if(stu.age()) std::cout << *stu.age() << std::endl;
+    // std::cout << stu.classes_id() << std::endl;
+
+    // stu.age(15);
+    // update_student(db, stu);
+    // remove_student(db);
+    // classes_student(db);
+    all_name(db);
     return 0;
 }

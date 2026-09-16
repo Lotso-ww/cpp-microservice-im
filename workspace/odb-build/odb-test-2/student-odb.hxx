@@ -7,6 +7,17 @@
 #ifndef STUDENT_ODB_HXX
 #define STUDENT_ODB_HXX
 
+// Begin prologue.
+//
+#include <odb/boost/version.hxx>
+#if ODB_BOOST_VERSION != 2050000 // 2.5.0
+#  error ODB and C++ compilers see different libodb-boost interface versions
+#endif
+#include <odb/boost/date-time/mysql/gregorian-traits.hxx>
+#include <odb/boost/date-time/mysql/posix-time-traits.hxx>
+//
+// End prologue.
+
 #include <odb/version.hxx>
 
 #if ODB_VERSION != 20500UL
@@ -136,6 +147,25 @@ namespace odb
     public:
     typedef ::classes_student view_type;
     typedef ::classes_student* pointer_type;
+
+    static void
+    callback (database&, view_type&, callback_event);
+  };
+
+  // all_name
+  //
+  template <>
+  struct class_traits< ::all_name >
+  {
+    static const class_kind kind = class_view;
+  };
+
+  template <>
+  class access::view_traits< ::all_name >
+  {
+    public:
+    typedef ::all_name view_type;
+    typedef ::all_name* pointer_type;
 
     static void
     callback (database&, view_type&, callback_event);
@@ -583,32 +613,32 @@ namespace odb
     public:
     struct image_type
     {
-      // _id
+      // id
       //
-      unsigned long long _id_value;
-      my_bool _id_null;
+      unsigned long long id_value;
+      my_bool id_null;
 
-      // _sn
+      // sn
       //
-      unsigned long long _sn_value;
-      my_bool _sn_null;
+      unsigned long long sn_value;
+      my_bool sn_null;
 
-      // _name
+      // name
       //
-      details::buffer _name_value;
-      unsigned long _name_size;
-      my_bool _name_null;
+      details::buffer name_value;
+      unsigned long name_size;
+      my_bool name_null;
 
-      // _age
+      // age
       //
-      unsigned short _age_value;
-      my_bool _age_null;
+      unsigned short age_value;
+      my_bool age_null;
 
-      // _classes_name
+      // classes_name
       //
-      details::buffer _classes_name_value;
-      unsigned long _classes_name_size;
-      my_bool _classes_name_null;
+      details::buffer classes_name_value;
+      unsigned long classes_name_size;
+      my_bool classes_name_null;
 
       std::size_t version;
     };
@@ -647,6 +677,61 @@ namespace odb
   template <>
   class access::view_traits_impl< ::classes_student, id_common >:
     public access::view_traits_impl< ::classes_student, id_mysql >
+  {
+  };
+
+  // all_name
+  //
+  template <>
+  class access::view_traits_impl< ::all_name, id_mysql >:
+    public access::view_traits< ::all_name >
+  {
+    public:
+    struct image_type
+    {
+      // name
+      //
+      details::buffer name_value;
+      unsigned long name_size;
+      my_bool name_null;
+
+      std::size_t version;
+    };
+
+    typedef mysql::view_statements<view_type> statements_type;
+
+    typedef mysql::query_base query_base_type;
+    struct query_columns
+    {
+    };
+
+    static const bool versioned = false;
+
+    static bool
+    grow (image_type&,
+          my_bool*);
+
+    static void
+    bind (MYSQL_BIND*,
+          image_type&);
+
+    static void
+    init (view_type&,
+          const image_type&,
+          database*);
+
+    static const std::size_t column_count = 1UL;
+
+    static query_base_type
+    query_statement (const query_base_type&);
+
+    static result<view_type>
+    query (database&, const query_base_type&);
+  };
+
+  template <>
+  class access::view_traits_impl< ::all_name, id_common >:
+    public access::view_traits_impl< ::all_name, id_mysql >
   {
   };
 
