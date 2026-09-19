@@ -1,6 +1,6 @@
-#include "../common/etcd.hpp"
-#include "../common/channel.hpp"
-#include "../brpc_back/main.pb.h"
+#include "../../common/etcd.hpp"
+#include "../../common/channel.hpp"
+#include "../../brpc_back/main.pb.h"
 #include <google/protobuf/stubs/callback.h>
 #include <brpc/channel.h>
 #include <brpc/controller.h>
@@ -8,7 +8,6 @@
 #include <functional>
 #include <gflags/gflags.h>
 #include <memory>
-#include <string>
 #include <thread>
 
 

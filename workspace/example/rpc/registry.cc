@@ -1,5 +1,5 @@
-#include "../common/etcd.hpp"
-#include "../brpc_back/main.pb.h"
+#include "../../common/etcd.hpp"
+#include "../../brpc_back/main.pb.h"
 #include <brpc/server.h>
 #include <butil/logging.h>
 #include <chrono>
