@@ -1,4 +1,4 @@
-#include "../aip-cpp-sdk-4.16.7/speech.h"
+#include "../../common/aip-cpp-sdk-4.16.7/speech.h"
 
 void asr(aip::Speech &client)
 {

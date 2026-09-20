@@ -1,3 +1,4 @@
+#pragma once
 #include <cpr/response.h>
 #include <exception>
 #include <iostream>

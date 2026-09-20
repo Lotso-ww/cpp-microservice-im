@@ -1,3 +1,4 @@
+#pragma once
 #include <amqpcpp/exchangetype.h>
 #include <amqpcpp/message.h>
 #include <cstddef>
