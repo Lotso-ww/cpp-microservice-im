@@ -1,0 +1,14 @@
+[
+{
+  "directory": "/home/lotso/project/cpp-microservice-im/workspace/odb-build/build/odb-test-2",
+  "command": "/usr/bin/c++  -I/home/lotso/project/cpp-microservice-im/workspace/odb-build/odb-test-2/entity -I/home/lotso/project/cpp-microservice-im/workspace/odb-build/build/odb-test-2 -std=gnu++17 -o CMakeFiles/main.dir/source/main.cc.o -c /home/lotso/project/cpp-microservice-im/workspace/odb-build/odb-test-2/source/main.cc",
+  "file": "/home/lotso/project/cpp-microservice-im/workspace/odb-build/odb-test-2/source/main.cc",
+  "output": "odb-test-2/CMakeFiles/main.dir/source/main.cc.o"
+},
+{
+  "directory": "/home/lotso/project/cpp-microservice-im/workspace/odb-build/build/odb-test-2",
+  "command": "/usr/bin/c++  -I/home/lotso/project/cpp-microservice-im/workspace/odb-build/odb-test-2/entity -I/home/lotso/project/cpp-microservice-im/workspace/odb-build/build/odb-test-2 -std=gnu++17 -o CMakeFiles/main.dir/student-odb.cxx.o -c /home/lotso/project/cpp-microservice-im/workspace/odb-build/build/odb-test-2/student-odb.cxx",
+  "file": "/home/lotso/project/cpp-microservice-im/workspace/odb-build/build/odb-test-2/student-odb.cxx",
+  "output": "odb-test-2/CMakeFiles/main.dir/student-odb.cxx.o"
+}
+]

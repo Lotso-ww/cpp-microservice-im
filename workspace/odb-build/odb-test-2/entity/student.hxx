@@ -77,7 +77,7 @@ struct classes_student{
 // };
 
 // 加条件
-#pragma db view query("select name from Student" + (?));
+#pragma db view query("select name from Student" + (?))
 struct all_name {
     std::string name;
 };
