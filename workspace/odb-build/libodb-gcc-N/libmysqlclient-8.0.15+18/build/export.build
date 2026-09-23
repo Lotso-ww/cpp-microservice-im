@@ -1,9 +1,0 @@
-# file      : build/export.build
-# license   : GPLv2 with Universal FOSS Exception; see accompanying LICENSE file
-
-$out_root/
-{
-  include mysql/
-}
-
-export $out_root/mysql/$import.target

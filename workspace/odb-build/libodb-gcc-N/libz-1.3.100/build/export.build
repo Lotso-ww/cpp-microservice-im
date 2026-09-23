@@ -1,9 +1,0 @@
-# file      : build/export.build
-# license   : zlib License; see accompanying LICENSE file
-
-$out_root/
-{
-  include libz/
-}
-
-export $out_root/libz/lib{z}

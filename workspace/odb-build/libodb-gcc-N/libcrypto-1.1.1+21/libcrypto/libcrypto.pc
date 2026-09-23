@@ -1,7 +1,0 @@
-Name: libcrypto
-Version: 1.1.1+21
-Description: C library providing general cryptography and X.509 support
-URL: https://www.openssl.org/
-Cflags: -I/usr/include
-Libs: -L/usr/lib -lcrypto
-Libs.private: -lz -ldl -lpthread

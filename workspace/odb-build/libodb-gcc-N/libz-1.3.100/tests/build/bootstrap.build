@@ -1,8 +1,0 @@
-# file      : tests/build/bootstrap.build
-# license   : zlib License; see accompanying LICENSE file
-
-project = # Unnamed subproject.
-
-using config
-using dist
-using test

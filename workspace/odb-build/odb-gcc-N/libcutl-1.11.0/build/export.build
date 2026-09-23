@@ -1,9 +1,0 @@
-# file      : build/export.build
-# license   : MIT; see accompanying LICENSE file
-
-$out_root/
-{
-  include libcutl/
-}
-
-export $out_root/libcutl/lib{cutl}

@@ -1,6 +1,0 @@
-# file      : tests/basic/buildfile
-# license   : OpenSSL and SSLeay Licenses; see accompanying LICENSE file
-
-import libs = libssl%lib{ssl}
-
-exe{driver}: {h c}{**} $libs testscript
