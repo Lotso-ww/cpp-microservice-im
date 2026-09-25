@@ -8,7 +8,6 @@
 #include <functional>
 #include <memory>
 #include <string>
-#include <system_error>
 #include "../common/logger.hpp"
 
 namespace lotso_im {
