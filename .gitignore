@@ -45,3 +45,6 @@ compile_commands.json
 code/server/proto/gen/
 *.pb.h
 *.pb.cc
+
+# clangd 索引缓存
+.cache/
