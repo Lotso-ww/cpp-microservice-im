@@ -2,10 +2,10 @@
 #include <brpc/server.h>
 #include <butil/logging.h>
 
-#include "../common/asr.hpp"        // 语音识别模块封装
-#include "../common/etcd.hpp"       // 服务注册模块封装
-#include "../common/logger.hpp"     // 日志模块封装
-#include "../proto/gen/speech.pb.h" // protobuf 框架代码
+#include "asr.hpp"        // 语音识别模块封装
+#include "etcd.hpp"       // 服务注册模块封装
+#include "logger.hpp"     // 日志模块封装
+#include "speech.pb.h"    // protobuf 框架代码
 #include <brpc/closure_guard.h>
 #include <cstdint>
 #include <cstdlib>
@@ -17,7 +17,8 @@ namespace lotso_im {
 class SpeechServiceImpl : public lotso_im::SpeechService
 {
 public:
-    SpeechServiceImpl(){};
+    SpeechServiceImpl(ASRClient::ptr asr_client) : _asr_client(asr_client)
+    {};
    ~SpeechServiceImpl(){};
     void SpeechRecognition(google::protobuf::RpcController* controller,
                     const ::lotso_im::SpeechRecognitionReq* request,
@@ -80,8 +81,13 @@ public:
     // 构造 RPC 服务器对象
     void make_rpc_object(uint16_t port, int32_t timeout, uint8_t num_threads)
     {
+        if(!_asr_client)
+        {
+            LOG_ERROR("还未初始化语音识别模块! ");
+            abort();
+        }
         _rpc_server = std::make_shared<brpc::Server>();
-        SpeechServiceImpl speech_service;
+        SpeechServiceImpl speech_service(_asr_client);
         int ret = _rpc_server->AddService(&speech_service, brpc::ServiceOwnership::SERVER_DOESNT_OWN_SERVICE);  // brpc::ServiceOwnership::SERVER_DOESNT_OWN_SERVICE -- 添加服务失败时, 服务器不会删除服务对象
         if(ret == -1)
         {
