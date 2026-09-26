@@ -49,14 +49,14 @@ namespace aip {
     
     inline std::string to_upper(std::string src)
     {
-        std::transform(src.begin(), src.end(), src.begin(), toupper);
+        std::transform(src.begin(), src.end(), src.begin(), [](unsigned char c){ return std::toupper(c); }); // patched: 避免与 ::toupper 的 ADL 重载歧义
         return src;
     }
     
     
     inline std::string to_lower(std::string src)
     {
-        std::transform(src.begin(), src.end(), src.begin(), tolower);
+        std::transform(src.begin(), src.end(), src.begin(), [](unsigned char c){ return std::tolower(c); }); // patched: 避免与 ::tolower 的 ADL 重载歧义
         return src;
     }
     

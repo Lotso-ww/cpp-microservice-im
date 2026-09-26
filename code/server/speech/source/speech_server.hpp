@@ -49,7 +49,11 @@ class SpeechServer
 {
 public:
     using ptr = std::shared_ptr<SpeechServer>;
-    SpeechServer(const ASRClient::ptr &asr_client, const Registry::ptr &reg_client, const std::shared_ptr<brpc::Server> &server){}
+    SpeechServer(const ASRClient::ptr &asr_client, const Registry::ptr &reg_client, const std::shared_ptr<brpc::Server> &server)
+        : _asr_client(asr_client)
+        , _reg_client(reg_client)
+        , _rpc_server(server)
+    {}
     ~SpeechServer(){}
     // 搭建 RPC 服务器, 并启动服务器
     void start()
@@ -63,7 +67,7 @@ private:
 };
 
 // 使用了建造者模式, 把构造 SpeechServer 的过程封装起来了
-class SpeechServerBuild
+class SpeechServerBuilder
 {
 public: 
     // 构造语音识别客户端对象
@@ -86,8 +90,8 @@ public:
             abort();
         }
         _rpc_server = std::make_shared<brpc::Server>();
-        SpeechServiceImpl speech_service(_asr_client);
-        int ret = _rpc_server->AddService(&speech_service, brpc::ServiceOwnership::SERVER_DOESNT_OWN_SERVICE);  // brpc::ServiceOwnership::SERVER_DOESNT_OWN_SERVICE -- 添加服务失败时, 服务器不会删除服务对象
+        SpeechServiceImpl *speech_service = new SpeechServiceImpl(_asr_client);
+        int ret = _rpc_server->AddService(speech_service, brpc::ServiceOwnership::SERVER_OWNS_SERVICE);  // brpc::ServiceOwnership::SERVER_OWNS_SERVICE -- 添加服务失败时, 服务器将负责删除服务对象
         if(ret == -1)
         {
             LOG_ERROR("添加 RPC 服务失败! ");

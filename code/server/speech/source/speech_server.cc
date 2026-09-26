@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
     // settings.logging_dest = logging::LoggingDestination::LOG_TO_NONE;
     // logging::InitLogging(settings);
 
-    lotso_im::SpeechServerBuild ssb;
+    lotso_im::SpeechServerBuilder ssb;
     ssb.make_asr_object(FLAGS_app_id, FLAGS_api_key, FLAGS_secret_key);
     ssb.make_reg_object(FLAGS_registry_host, FLAGS_base_service + FLAGS_instance_name, FLAGS_access_host);
     ssb.make_rpc_object(FLAGS_listen_port, FLAGS_rpc_timeout, FLAGS_rpc_threads);
