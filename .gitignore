@@ -48,3 +48,7 @@ code/server/proto/gen/
 
 # clangd 索引缓存
 .cache/
+
+# 本地 IDE / Agent 配置（仅个人开发环境使用，不提交）
+.trae/
+.clangd
