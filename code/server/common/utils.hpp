@@ -60,7 +60,7 @@ bool readFile(const std::string &filename, std::string &body)
     ifs.close();
     return true;
 }
-bool writeFile(const std::string &filename, std::string &body)
+bool writeFile(const std::string &filename, const std::string &body)
 {
     // 实现将 body 中的数据, 写入 filename 对应的文件中
     std::ofstream ofs(filename, std::ios::out | std::ios::binary | std::ios::trunc);

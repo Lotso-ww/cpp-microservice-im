@@ -5,8 +5,10 @@
 
 #include <brpc/server.h>
 #include <butil/logging.h>
+#include <string>
 #include "etcd.hpp"      // 服务注册模块封装
 #include "logger.hpp"    // 日志模块封装
+#include "utils.hpp"     // 公共工具类
 #include "base.pb.h"     // protobuf 框架代码
 #include "file.pb.h"
 
@@ -22,24 +24,96 @@ public:
                     ::lotso_im::GetSingleFileRsp* response,
                     ::google::protobuf::Closure* done){
         brpc::ClosureGuard rpc_guard(done);
+        response->set_request_id(request->request_id());
+        // 1. 取出请求中的文件 ID(起始就是文件名)
+        std::string fid = request->file_id();
+        // 2. 将文件ID作为文件名, 读取文件数据
+        std::string body;
+        bool ret = readFile(fid, body);
+        if(ret == false)
+        {
+            response->set_success(false);
+            response->set_errmsg("读取文件数据失败! ");
+            LOG_ERROR("{} 读取文件数据失败! ", request->request_id());
+            return;
+        }
+        // 3. 组织响应
+        response->set_success(true);
+        response->mutable_file_data()->set_file_id(fid);
+        response->mutable_file_data()->set_file_content(body);
     }
     void GetMultiFile(google::protobuf::RpcController* controller,
                     const ::lotso_im::GetMultiFileReq* request,
                     ::lotso_im::GetMultiFileRsp* response,
                     ::google::protobuf::Closure* done){
         brpc::ClosureGuard rpc_guard(done);
+        response->set_request_id(request->request_id());
+        // 循环取出请求中的文件ID, 读取文件数据进行填充
+        for(int i = 0; i < request->file_id_list_size(); i++)
+        {
+            std::string fid = request->file_id_list(i);
+            std::string body;
+            bool ret = readFile(fid, body);
+            if(ret == false)
+            {
+                response->set_success(false);
+                response->set_errmsg("读取文件数据失败! ");
+                LOG_ERROR("{} 读取文件数据失败! ", request->request_id());
+                return;
+            }
+            FileDownloadData data;
+            data.set_file_id(fid);
+            data.set_file_content(body);
+            response->mutable_file_data()->insert({fid, data});
+        }
+        response->set_success(true);
     }
     void PutSingleFile(google::protobuf::RpcController* controller,
                     const ::lotso_im::PutSingleFileReq* request,
                     ::lotso_im::PutSingleFileRsp* response,
                     ::google::protobuf::Closure* done){
         brpc::ClosureGuard rpc_guard(done);
+        response->set_request_id(request->request_id());
+        // 1. 为文件生成一个唯一的 uuid 作为文件名以及文件ID
+        std::string fid = uuid();
+        // 2. 取出请求中的文件数据, 进行文件数据写入
+        bool ret = writeFile(fid, request->file_data().file_content());
+        if(ret == false)
+        {
+            response->set_success(false);
+            response->set_errmsg("写入文件数据失败! ");
+            LOG_ERROR("{} 写入文件数据失败! ", request->request_id());
+            return;
+        }
+        // 3. 组织响应
+        response->set_success(true);
+        response->mutable_file_info()->set_file_id(fid);
+        response->mutable_file_info()->set_file_size(request->file_data().file_size());
+        response->mutable_file_info()->set_file_name(request->file_data().file_name());
     }
     void PutMultiFile(google::protobuf::RpcController* controller,
                     const ::lotso_im::PutMultiFileReq* request,
                     ::lotso_im::PutMultiFileRsp* response,
                     ::google::protobuf::Closure* done){
         brpc::ClosureGuard rpc_guard(done);
+        response->set_request_id(request->request_id());
+        for(int i = 0; i < request->file_data_size(); i++)
+        {
+            std::string fid = uuid();
+            bool ret = writeFile(fid, request->file_data(i).file_content());
+            if(ret == false)
+            {
+                response->set_success(false);
+                response->set_errmsg("写入文件数据失败! ");
+                LOG_ERROR("{} 写入文件数据失败! ", request->request_id());
+                return;
+            }
+            lotso_im::FileMessageInfo *info  = response->add_file_info();
+            info->set_file_id(fid);
+            info->set_file_size(request->file_data(i).file_size());
+            info->set_file_name(request->file_data(i).file_name());
+        }
+        response->set_success(true);
     }
 private:
 };
