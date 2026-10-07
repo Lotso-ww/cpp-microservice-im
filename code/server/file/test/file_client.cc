@@ -20,6 +20,8 @@ DEFINE_string(etcd_host, "http://127.0.0.1:2379", "服务注册中心地址");
 DEFINE_string(base_service, "/service", "服务监控根目录");
 DEFINE_string(speech_service, "/service/file_service", "服务监控根目录");
 
+
+
 lotso_im::ServiceChannel::Channelptr channel;
 std::string single_file_id;
 
@@ -95,7 +97,7 @@ TEST(put_test, multi_file)
     ASSERT_TRUE(rsp->success());
     for(int i = 0; i < rsp->file_info_size(); i++)
     {
-        multi_file_id[i] = rsp->file_info(i).file_id();
+        multi_file_id.push_back(rsp->file_info(i).file_id());
         LOG_DEBUG("文件ID: {}", rsp->file_info(i).file_id());
     }
 }
@@ -118,8 +120,11 @@ TEST(get_test, multi_file)
     // 将文件数据, 存储到文件中
     ASSERT_TRUE(rsp->file_data().find(multi_file_id[0]) != rsp->file_data().end());
     ASSERT_TRUE(rsp->file_data().find(multi_file_id[1]) != rsp->file_data().end());
-    lotso_im::writeFile("base_download_file1", rsp->file_data().at(multi_file_id[0]).file_content());
-    lotso_im::writeFile("file_download_file2", rsp->file_data().at(multi_file_id[1]).file_content());
+    auto map = rsp->file_data(); // 这里不能使用引用
+    auto file_data1 = map[multi_file_id[0]];
+    lotso_im::writeFile("base_download_file1", file_data1.file_content());
+    auto file_data2 = map[multi_file_id[1]];
+    lotso_im::writeFile("file_download_file2", file_data2.file_content());
 }
 
 int main(int argc, char* argv[])

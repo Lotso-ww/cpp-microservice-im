@@ -15,6 +15,8 @@ DEFINE_string(base_service, "/service", "服务器监控目录");
 DEFINE_string(instance_name, "/file_service/instance", "当前实例名称");
 DEFINE_string(access_host, "127.0.0.1:10002", "当前实例的外部访问地址");
 
+DEFINE_string(storage_path, "./data/", "文件存储的目录");
+
 DEFINE_int32(listen_port, 10002, "Rpc 服务器监听端口");
 DEFINE_int32(rpc_timeout, -1, "RPC 调用超时时间");
 DEFINE_int32(rpc_threads, 1, "RPC 的IO线程数量");
@@ -32,7 +34,7 @@ int main(int argc, char *argv[])
 
     lotso_im::FileServerBuilder fsb;
     fsb.make_reg_object(FLAGS_registry_host, FLAGS_base_service + FLAGS_instance_name, FLAGS_access_host);
-    fsb.make_rpc_object(FLAGS_listen_port, FLAGS_rpc_timeout, FLAGS_rpc_threads);
+    fsb.make_rpc_object(FLAGS_listen_port, FLAGS_rpc_timeout, FLAGS_rpc_threads, FLAGS_storage_path);
 
     auto server = fsb.build();
     server->start();

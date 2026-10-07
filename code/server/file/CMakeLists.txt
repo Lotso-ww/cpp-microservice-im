@@ -8,7 +8,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(target "file_server")
-
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g") # 方便我们可以使用 gbd 调试
 
 # 3. 检测并生成ODB框架代码
 #   1. 添加所需的proto映射代码文件名称
@@ -45,11 +45,11 @@ target_link_libraries(${target} -lgflags -lspdlog -lfmt -lbrpc -lssl -lcrypto -l
 
 
 # 测试
-# set(test_client "speech_client")
-# set(test_files "")
-# aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/test test_files)
-# add_executable(${test_client} ${test_files} ${proto_srcs})
-# target_link_libraries(${test_client} -lgflags -lspdlog -lfmt -lbrpc -lssl -lcrypto -lprotobuf -lleveldb -letcd-cpp-api -lcpprest -lcurl /usr/local/lib/libjsoncpp.so.19)
+set(test_client "file_client")
+set(test_files "")
+aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/test test_files)
+add_executable(${test_client} ${test_files} ${proto_srcs})
+target_link_libraries(${test_client} -lgtest -lgflags -lspdlog -lfmt -lbrpc -lssl -lcrypto -lprotobuf -lleveldb -letcd-cpp-api -lcpprest -lcurl /usr/local/lib/libjsoncpp.so.19)
 
 # 6. 设置头文件默认搜索路径
 include_directories(${CMAKE_CURRENT_BINARY_DIR})

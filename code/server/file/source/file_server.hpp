@@ -6,6 +6,7 @@
 #include <brpc/server.h>
 #include <butil/logging.h>
 #include <string>
+#include <sys/stat.h>
 #include "etcd.hpp"      // 服务注册模块封装
 #include "logger.hpp"    // 日志模块封装
 #include "utils.hpp"     // 公共工具类
@@ -17,8 +18,14 @@ namespace lotso_im {
 class FileServiceImpl : public lotso_im::FileService
 {
 public:
-    FileServiceImpl(){};
-   ~FileServiceImpl(){};
+    FileServiceImpl(const std::string &storage_path)
+        :_storage_path(storage_path)
+    {
+        umask(0);
+        mkdir(_storage_path.c_str(), 0755);
+        if(_storage_path.back() != '/') _storage_path.push_back('/'); // 防止没斜杠
+    }
+   ~FileServiceImpl(){}
     void GetSingleFile(google::protobuf::RpcController* controller,
                     const ::lotso_im::GetSingleFileReq* request,
                     ::lotso_im::GetSingleFileRsp* response,
@@ -27,9 +34,10 @@ public:
         response->set_request_id(request->request_id());
         // 1. 取出请求中的文件 ID(起始就是文件名)
         std::string fid = request->file_id();
+        std::string filename = _storage_path + fid;
         // 2. 将文件ID作为文件名, 读取文件数据
         std::string body;
-        bool ret = readFile(fid, body);
+        bool ret = readFile(filename, body);
         if(ret == false)
         {
             response->set_success(false);
@@ -52,8 +60,9 @@ public:
         for(int i = 0; i < request->file_id_list_size(); i++)
         {
             std::string fid = request->file_id_list(i);
+            std::string filename = _storage_path + fid;
             std::string body;
-            bool ret = readFile(fid, body);
+            bool ret = readFile(filename, body);
             if(ret == false)
             {
                 response->set_success(false);
@@ -76,8 +85,9 @@ public:
         response->set_request_id(request->request_id());
         // 1. 为文件生成一个唯一的 uuid 作为文件名以及文件ID
         std::string fid = uuid();
+        std::string filename = _storage_path + fid;
         // 2. 取出请求中的文件数据, 进行文件数据写入
-        bool ret = writeFile(fid, request->file_data().file_content());
+        bool ret = writeFile(filename, request->file_data().file_content());
         if(ret == false)
         {
             response->set_success(false);
@@ -100,7 +110,8 @@ public:
         for(int i = 0; i < request->file_data_size(); i++)
         {
             std::string fid = uuid();
-            bool ret = writeFile(fid, request->file_data(i).file_content());
+            std::string filename = _storage_path + fid;
+            bool ret = writeFile(filename, request->file_data(i).file_content());
             if(ret == false)
             {
                 response->set_success(false);
@@ -116,6 +127,7 @@ public:
         response->set_success(true);
     }
 private:
+    std::string _storage_path;
 };
 
 class FileServer
@@ -123,6 +135,8 @@ class FileServer
 public:
     using ptr = std::shared_ptr<FileServer>;
     FileServer(const Registry::ptr &reg_client, const std::shared_ptr<brpc::Server> &server)
+        : _reg_client(reg_client)
+        , _rpc_server(server)
     {}
     ~FileServer(){}
     // 搭建 RPC 服务器, 并启动服务器
@@ -146,10 +160,10 @@ public:
         _reg_client->registry(service_name, access_host);
     }
     // 构造 RPC 服务器对象
-    void make_rpc_object(uint16_t port, int32_t timeout, uint8_t num_threads)
+    void make_rpc_object(uint16_t port, int32_t timeout, uint8_t num_thread, const std::string &path = "./data/")
     {
         _rpc_server = std::make_shared<brpc::Server>();
-        FileServiceImpl *file_service = new FileServiceImpl();
+        FileServiceImpl *file_service = new FileServiceImpl(path);
         int ret = _rpc_server->AddService(file_service, brpc::ServiceOwnership::SERVER_OWNS_SERVICE);  // brpc::ServiceOwnership::SERVER_OWNS_SERVICE -- 添加服务失败时, 服务器将负责删除服务对象
         if(ret == -1)
         {
@@ -158,7 +172,7 @@ public:
         }
         brpc::ServerOptions options;
         options.idle_timeout_sec = timeout; // 连接空闲超时时间 -- 超时后连接被关闭
-        options.num_threads = num_threads; // io 线程数量
+        options.num_threads = num_thread; // io 线程数量
         ret = _rpc_server->Start(port, &options);
         if(ret == -1)
         {

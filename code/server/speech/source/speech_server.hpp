@@ -17,8 +17,8 @@ class SpeechServiceImpl : public lotso_im::SpeechService
 {
 public:
     SpeechServiceImpl(ASRClient::ptr asr_client) : _asr_client(asr_client)
-    {};
-   ~SpeechServiceImpl(){};
+    {}
+   ~SpeechServiceImpl(){}
     void SpeechRecognition(google::protobuf::RpcController* controller,
                     const ::lotso_im::SpeechRecognitionReq* request,
                     ::lotso_im::SpeechRecognitionRsp* response,
