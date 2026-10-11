@@ -1,8 +1,6 @@
 #pragma once
-#include <gtest/internal/gtest-internal.h>
 #include <odb/forward.hxx>
 #include <string>
-#include <cstddef>
 #include <odb/nullable.hxx>
 #include <odb/core.hxx>
 
@@ -39,14 +37,14 @@ private:
     friend class odb::access;
     #pragma db id auto
     unsigned long _id;
-    #pragma db index
+    #pragma db index unique
     std::string _user_id;
-    #pragma db index
+    #pragma db index unique
     odb::nullable<std::string> _nickname;       // 用户昵称 -- 不一定存在 -- 手机号注册的时候就是随机的
-    #pragma db index
+    #pragma db index unique
     odb::nullable<std::string> _description;    // 用户签名 -- 不一定存在 -- 可以不设置
     odb::nullable<std::string> _password;       // 用户密码 -- 不一定存在 -- 手机号注册的默认就没有
-    #pragma db index
+    #pragma db index unique
     odb::nullable<std::string> _phone;          // 用户手机号 -- 不一定存在 -- 用户名注册
     odb::nullable<std::string> _avarta_id;      // 用户头像ID -- 不一定存在
 };

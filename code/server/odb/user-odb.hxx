@@ -7,17 +7,6 @@
 #ifndef USER_ODB_HXX
 #define USER_ODB_HXX
 
-// Begin prologue.
-//
-#include <odb/boost/version.hxx>
-#if ODB_BOOST_VERSION != 2050000 // 2.5.0
-#  error ODB and C++ compilers see different libodb-boost interface versions
-#endif
-#include <odb/boost/date-time/mysql/gregorian-traits.hxx>
-#include <odb/boost/date-time/mysql/posix-time-traits.hxx>
-//
-// End prologue.
-
 #include <odb/version.hxx>
 
 #if ODB_VERSION != 20500UL
@@ -60,7 +49,7 @@ namespace odb
   {
     public:
     typedef ::User object_type;
-    typedef ::User* pointer_type;
+    typedef ::std::shared_ptr< ::User > pointer_type;
     typedef odb::pointer_traits<pointer_type> pointer_traits;
 
     static const bool polymorphic = false;

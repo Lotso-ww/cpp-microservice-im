@@ -14,15 +14,15 @@ CREATE TABLE `user` (
   `avarta_id` TEXT NULL)
  ENGINE=InnoDB;
 
-CREATE INDEX `user_id_i`
+CREATE UNIQUE INDEX `user_id_i`
   ON `user` (`user_id`);
 
-CREATE INDEX `nickname_i`
+CREATE UNIQUE INDEX `nickname_i`
   ON `user` (`nickname`);
 
-CREATE INDEX `description_i`
+CREATE UNIQUE INDEX `description_i`
   ON `user` (`description`);
 
-CREATE INDEX `phone_i`
+CREATE UNIQUE INDEX `phone_i`
   ON `user` (`phone`);
 
