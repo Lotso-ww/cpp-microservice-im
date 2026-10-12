@@ -2,16 +2,17 @@
  * compiler for C++.
  */
 
+USE `my_im`;
 DROP TABLE IF EXISTS `user`;
 
 CREATE TABLE `user` (
   `id` BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
-  `user_id` TEXT NOT NULL,
-  `nickname` TEXT NULL,
+  `user_id` varchar(64) NOT NULL,
+  `nickname` varchar(64) NULL,
   `description` TEXT NULL,
-  `password` TEXT NULL,
-  `phone` TEXT NULL,
-  `avarta_id` TEXT NULL)
+  `password` varchar(64) NULL,
+  `phone` varchar(64) NULL,
+  `avarta_id` varchar(64) NULL)
  ENGINE=InnoDB;
 
 CREATE UNIQUE INDEX `user_id_i`
@@ -19,9 +20,6 @@ CREATE UNIQUE INDEX `user_id_i`
 
 CREATE UNIQUE INDEX `nickname_i`
   ON `user` (`nickname`);
-
-CREATE UNIQUE INDEX `description_i`
-  ON `user` (`description`);
 
 CREATE UNIQUE INDEX `phone_i`
   ON `user` (`phone`);

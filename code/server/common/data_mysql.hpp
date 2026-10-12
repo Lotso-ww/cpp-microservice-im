@@ -3,6 +3,7 @@
 #include "user-odb.hxx"
 #include "logger.hpp"
 #include <exception>
+#include <fcntl.h>
 #include <odb/forward.hxx>
 #include <odb/mysql/connection-factory.hxx>
 #include <odb/query.hxx>
@@ -16,6 +17,7 @@
 #include <odb/mysql/database.hxx>
 #include <vector>
 
+namespace lotso_im {
 class ODBFactory
 {
 public:
@@ -32,7 +34,7 @@ class UserTable
 {
 public:
     UserTable(const std::shared_ptr<odb::core::database> &db) : _db(db) {}
-    void insert(const std::shared_ptr<User> &user)
+    bool insert(const std::shared_ptr<User> &user)
     {
         try {
             odb::transaction trans(_db->begin());
@@ -40,9 +42,11 @@ public:
             trans.commit();
         } catch (const std::exception &e) {
             LOG_ERROR("新增用户失败: {}! ", e.what());
+            return false;
         }
+        return true;
     }
-    void update(const std::shared_ptr<User> &user)
+    bool update(const std::shared_ptr<User> &user)
     {
         try {
             odb::transaction trans(_db->begin());
@@ -50,7 +54,9 @@ public:
             trans.commit();
         } catch (const std::exception &e) {
             LOG_ERROR("更新用户失败: {}! ", e.what());
+            return false;
         }
+        return true;
     }
     std::shared_ptr<User> select_by_nickname(const std::string &nickname)
     {
@@ -124,3 +130,4 @@ public:
 private:
     std::shared_ptr<odb::core::database> _db;
 };
+}
