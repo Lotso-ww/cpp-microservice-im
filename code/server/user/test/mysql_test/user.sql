@@ -2,7 +2,7 @@
  * compiler for C++.
  */
 
-USE `my_im`;
+Use `my_im`;
 DROP TABLE IF EXISTS `user`;
 
 CREATE TABLE `user` (

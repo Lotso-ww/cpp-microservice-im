@@ -39,17 +39,17 @@ namespace odb
   // User
   //
   template <>
-  struct class_traits< ::User >
+  struct class_traits< ::lotso_im::User >
   {
     static const class_kind kind = class_object;
   };
 
   template <>
-  class access::object_traits< ::User >
+  class access::object_traits< ::lotso_im::User >
   {
     public:
-    typedef ::User object_type;
-    typedef ::std::shared_ptr< ::User > pointer_type;
+    typedef ::lotso_im::User object_type;
+    typedef ::std::shared_ptr< ::lotso_im::User > pointer_type;
     typedef odb::pointer_traits<pointer_type> pointer_traits;
 
     static const bool polymorphic = false;
@@ -92,7 +92,7 @@ namespace odb
   // User
   //
   template <typename A>
-  struct query_columns< ::User, id_mysql, A >
+  struct query_columns< ::lotso_im::User, id_mysql, A >
   {
     // id
     //
@@ -180,49 +180,49 @@ namespace odb
   };
 
   template <typename A>
-  const typename query_columns< ::User, id_mysql, A >::id_type_
-  query_columns< ::User, id_mysql, A >::
+  const typename query_columns< ::lotso_im::User, id_mysql, A >::id_type_
+  query_columns< ::lotso_im::User, id_mysql, A >::
   id (A::table_name, "`id`", 0);
 
   template <typename A>
-  const typename query_columns< ::User, id_mysql, A >::user_id_type_
-  query_columns< ::User, id_mysql, A >::
+  const typename query_columns< ::lotso_im::User, id_mysql, A >::user_id_type_
+  query_columns< ::lotso_im::User, id_mysql, A >::
   user_id (A::table_name, "`user_id`", 0);
 
   template <typename A>
-  const typename query_columns< ::User, id_mysql, A >::nickname_type_
-  query_columns< ::User, id_mysql, A >::
+  const typename query_columns< ::lotso_im::User, id_mysql, A >::nickname_type_
+  query_columns< ::lotso_im::User, id_mysql, A >::
   nickname (A::table_name, "`nickname`", 0);
 
   template <typename A>
-  const typename query_columns< ::User, id_mysql, A >::description_type_
-  query_columns< ::User, id_mysql, A >::
+  const typename query_columns< ::lotso_im::User, id_mysql, A >::description_type_
+  query_columns< ::lotso_im::User, id_mysql, A >::
   description (A::table_name, "`description`", 0);
 
   template <typename A>
-  const typename query_columns< ::User, id_mysql, A >::password_type_
-  query_columns< ::User, id_mysql, A >::
+  const typename query_columns< ::lotso_im::User, id_mysql, A >::password_type_
+  query_columns< ::lotso_im::User, id_mysql, A >::
   password (A::table_name, "`password`", 0);
 
   template <typename A>
-  const typename query_columns< ::User, id_mysql, A >::phone_type_
-  query_columns< ::User, id_mysql, A >::
+  const typename query_columns< ::lotso_im::User, id_mysql, A >::phone_type_
+  query_columns< ::lotso_im::User, id_mysql, A >::
   phone (A::table_name, "`phone`", 0);
 
   template <typename A>
-  const typename query_columns< ::User, id_mysql, A >::avarta_id_type_
-  query_columns< ::User, id_mysql, A >::
+  const typename query_columns< ::lotso_im::User, id_mysql, A >::avarta_id_type_
+  query_columns< ::lotso_im::User, id_mysql, A >::
   avarta_id (A::table_name, "`avarta_id`", 0);
 
   template <typename A>
-  struct pointer_query_columns< ::User, id_mysql, A >:
-    query_columns< ::User, id_mysql, A >
+  struct pointer_query_columns< ::lotso_im::User, id_mysql, A >:
+    query_columns< ::lotso_im::User, id_mysql, A >
   {
   };
 
   template <>
-  class access::object_traits_impl< ::User, id_mysql >:
-    public access::object_traits< ::User >
+  class access::object_traits_impl< ::lotso_im::User, id_mysql >:
+    public access::object_traits< ::lotso_im::User >
   {
     public:
     struct id_image_type
@@ -377,8 +377,8 @@ namespace odb
   };
 
   template <>
-  class access::object_traits_impl< ::User, id_common >:
-    public access::object_traits_impl< ::User, id_mysql >
+  class access::object_traits_impl< ::lotso_im::User, id_common >:
+    public access::object_traits_impl< ::lotso_im::User, id_mysql >
   {
   };
 

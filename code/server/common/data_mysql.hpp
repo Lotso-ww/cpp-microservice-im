@@ -41,7 +41,7 @@ public:
             _db->persist(*user);
             trans.commit();
         } catch (const std::exception &e) {
-            LOG_ERROR("新增用户失败: {}! ", e.what());
+            LOG_ERROR("新增用户失败: {}:{}! ", user->nickname(), e.what());
             return false;
         }
         return true;
@@ -53,7 +53,7 @@ public:
             _db->update(*user);
             trans.commit();
         } catch (const std::exception &e) {
-            LOG_ERROR("更新用户失败: {}! ", e.what());
+            LOG_ERROR("更新用户失败:  {}:{}! ", user->nickname(), e.what());
             return false;
         }
         return true;
@@ -68,7 +68,7 @@ public:
             res = _db->query_one<User>(query::nickname == nickname);
             trans.commit();
         } catch (const std::exception &e) {
-            LOG_ERROR("根据昵称查询用户失败: {}! ", e.what());
+            LOG_ERROR("根据昵称查询用户失败: {}:{}! ", nickname, e.what());
         }
         return res;
     }
@@ -82,7 +82,7 @@ public:
             res = _db->query_one<User>(query::phone == phone);
             trans.commit();
         } catch (const std::exception &e) {
-            LOG_ERROR("根据手机号查询用户失败: {}! ", e.what());
+            LOG_ERROR("根据手机号查询用户失败: {}:{}! ", phone, e.what());
         }
         return res;
     }
@@ -96,7 +96,7 @@ public:
             res = _db->query_one<User>(query::user_id == user_id);
             trans.commit();
         } catch (const std::exception &e) {
-            LOG_ERROR("根据用户ID查询用户失败: {}! ", e.what());
+            LOG_ERROR("根据用户ID查询用户失败: {}:{}! ", user_id, e.what());
         }
         return res;
     }

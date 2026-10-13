@@ -4,6 +4,8 @@
 #include <odb/nullable.hxx>
 #include <odb/core.hxx>
 
+namespace  lotso_im
+{
 #pragma db object table("user")
 class User 
 {
@@ -49,3 +51,4 @@ private:
     #pragma db type("varchar(64)")
     odb::nullable<std::string> _avarta_id;      // 用户头像ID -- 不一定存在
 };
+}
