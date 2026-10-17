@@ -70,7 +70,7 @@ namespace lotso_im {
     public:
         Codes(std::shared_ptr<sw::redis::Redis> &redis_client): _redis_client(redis_client)
         {}
-        void append(const std::string &cid, const std::string &code, std::chrono::milliseconds t = std::chrono::milliseconds(60000))
+        void append(const std::string &cid, const std::string &code, const std::chrono::milliseconds &t = std::chrono::milliseconds(60000))
         {
             _redis_client->set(cid, code, t);
         }
@@ -78,7 +78,7 @@ namespace lotso_im {
         {
             _redis_client->del(cid);
         }
-        sw::redis::OptionalString uid(const std::string &cid)
+        sw::redis::OptionalString code(const std::string &cid)
         {
             return _redis_client->get(cid);
         }
