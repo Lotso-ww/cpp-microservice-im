@@ -1,6 +1,6 @@
 #include "icsearch.hpp"
 #include "logger.hpp"
-#include "user.hxx"
+#include "../odb/user.hxx"
 #include <elasticlient/client.h>
 #include <json/value.h>
 #include <memory>
@@ -17,7 +17,7 @@ namespace lotso_im
     class ESClientFactory
     {
     public:
-        std::shared_ptr<elasticlient::Client> create(const std::vector<std::string> host_list)
+        static std::shared_ptr<elasticlient::Client> create(const std::vector<std::string> host_list)
         {
             return std::make_shared<elasticlient::Client>(host_list);
         }
@@ -61,7 +61,7 @@ namespace lotso_im
             LOG_INFO("用户数据插入/更新成功!");
             return true;
         }
-        std::vector<User> search(const std::string &key, std::vector<std::string> &uid_list)
+        std::vector<User> search(const std::string &key, const std::vector<std::string> &uid_list)
         {
             std::vector<User> ret;
             Json::Value json_user = ESSearch(_es_client, "user")
