@@ -20,6 +20,7 @@ public:
     
     // 获取和设置属性接口
     std::string user_id() { return _user_id; }
+    void user_id(const std::string &val) { _user_id = val; }
 
     odb::nullable<std::string> nickname() { return _nickname; }
     void nickname(const std::string &val) { _nickname = val; }
@@ -33,8 +34,8 @@ public:
     odb::nullable<std::string> phone() { return _phone; }
     void phone(const std::string &val) { _phone = val; }
 
-    odb::nullable<std::string> avarta_id() { return _avarta_id; }
-    void avarta_id(const std::string &val) { _avarta_id = val; }
+    odb::nullable<std::string> avatar_id() { return _avatar_id; }
+    void avatar_id(const std::string &val) { _avatar_id = val; }
 private:
     friend class odb::access;
     #pragma db id auto
@@ -49,6 +50,6 @@ private:
     #pragma db type("varchar(64)") index unique
     odb::nullable<std::string> _phone;          // 用户手机号 -- 不一定存在 -- 用户名注册
     #pragma db type("varchar(64)")
-    odb::nullable<std::string> _avarta_id;      // 用户头像ID -- 不一定存在
+    odb::nullable<std::string> _avatar_id;      // 用户头像ID -- 不一定存在
 };
 }
