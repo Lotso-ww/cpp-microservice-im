@@ -25,6 +25,7 @@ namespace lotso_im
     class ESUser
     {
     public:
+        using ptr = std::shared_ptr<ESUser>;
         ESUser(const std::shared_ptr<elasticlient::Client> &client) : _es_client(client)
         {}
         bool createIndex()

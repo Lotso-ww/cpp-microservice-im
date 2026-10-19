@@ -1,0 +1,238 @@
+//实现用户管理子服务
+#include <brpc/server.h>
+#include <butil/logging.h>
+#include <brpc/closure_guard.h>
+#include <cstdlib>
+#include <elasticlient/client.h>
+#include <memory>
+#include <odb/forward.hxx>
+#include <string>
+#include <vector>
+#include "asr.hpp"        // 语音识别模块封装
+#include "channel.hpp"
+#include "etcd.hpp"       // 服务注册模块封装
+#include "data_es.hpp"    // es 数据管理客户端封装
+#include "data_mysql.hpp"    // mysql 数据管理客户端封装
+#include "data_redis.hpp"    // redis 数据管理客户端封装
+#include "logger.hpp"     // 日志模块封装
+#include "base.pb.h"    // protobuf 框架代码
+#include "user.pb.h"    // protobuf 框架代码
+#include "file.pb.h"    // protobuf 框架代码
+
+namespace lotso_im {
+// 创建子类，继承于 UserService 创建一个子类，并实现 rpc 调用的业务功能
+class UserServiceImpl : public lotso_im::UserService
+{
+public:
+    UserServiceImpl(const std::string &file_service_name, const ServiceManager::ptr &mm_channels): _file_service_name(file_service_name), _mm_channels(mm_channels)
+    {}
+   ~UserServiceImpl(){}
+    virtual void UserRegister(::google::protobuf::RpcController* controller,
+                        const ::lotso_im::UserRegisterReq* request,
+                        ::lotso_im::UserRegisterRsp* response,
+                    ::google::protobuf::Closure* done){
+        brpc::ClosureGuard rpc_guard(done);
+    }
+                        
+    virtual void UserLogin(::google::protobuf::RpcController* controller,
+                        const ::lotso_im::UserLoginReq* request,
+                        ::lotso_im::UserLoginRsp* response,
+                        ::google::protobuf::Closure* done){
+        brpc::ClosureGuard rpc_guard(done);
+    }
+    virtual void GetPhoneVerifyCode(::google::protobuf::RpcController* controller,
+                        const ::lotso_im::PhoneVerifyCodeReq* request,
+                        ::lotso_im::PhoneVerifyCodeRsp* response,
+                        ::google::protobuf::Closure* done){
+        brpc::ClosureGuard rpc_guard(done);
+    }
+    virtual void PhoneRegister(::google::protobuf::RpcController* controller,
+                        const ::lotso_im::PhoneRegisterReq* request,
+                        ::lotso_im::PhoneRegisterRsp* response,
+                        ::google::protobuf::Closure* done){
+        brpc::ClosureGuard rpc_guard(done); 
+    }
+    virtual void PhoneLogin(::google::protobuf::RpcController* controller,
+                        const ::lotso_im::PhoneLoginReq* request,
+                        ::lotso_im::PhoneLoginRsp* response,
+                        ::google::protobuf::Closure* done){
+        brpc::ClosureGuard rpc_guard(done);
+    }
+    virtual void GetUserInfo(::google::protobuf::RpcController* controller,
+                        const ::lotso_im::GetUserInfoReq* request,
+                        ::lotso_im::GetUserInfoRsp* response,
+                        ::google::protobuf::Closure* done){
+        brpc::ClosureGuard rpc_guard(done);
+    }
+    virtual void GetMultiUserInfo(::google::protobuf::RpcController* controller,
+                        const ::lotso_im::GetMultiUserInfoReq* request,
+                        ::lotso_im::GetMultiUserInfoRsp* response,
+                        ::google::protobuf::Closure* done){
+        brpc::ClosureGuard rpc_guard(done);
+    }
+    virtual void SetUserAvatar(::google::protobuf::RpcController* controller,
+                        const ::lotso_im::SetUserAvatarReq* request,
+                        ::lotso_im::SetUserAvatarRsp* response,
+                        ::google::protobuf::Closure* done){
+        brpc::ClosureGuard rpc_guard(done);
+    }
+    virtual void SetUserNickname(::google::protobuf::RpcController* controller,
+                        const ::lotso_im::SetUserNicknameReq* request,
+                        ::lotso_im::SetUserNicknameRsp* response,
+                        ::google::protobuf::Closure* done){
+        brpc::ClosureGuard rpc_guard(done);
+    }
+    virtual void SetUserDescription(::google::protobuf::RpcController* controller,
+                        const ::lotso_im::SetUserDescriptionReq* request,
+                        ::lotso_im::SetUserDescriptionRsp* response,
+                        ::google::protobuf::Closure* done){
+        brpc::ClosureGuard rpc_guard(done);
+    }
+    virtual void SetUserPhoneNumber(::google::protobuf::RpcController* controller,
+                        const ::lotso_im::SetUserPhoneNumberReq* request,
+                        ::lotso_im::SetUserPhoneNumberRsp* response,
+                        ::google::protobuf::Closure* done){
+        brpc::ClosureGuard rpc_guard(done);
+    }
+
+private:
+    ESUser::ptr _es_user;
+    UserTable::ptr _mysql_user;
+    Session::ptr _redis_session;
+    Status::ptr _redis_Status;
+    Codes::ptr _redis_codes;
+    // 这边是 rpc 调用客户端相关对象
+    std::string _file_service_name;
+    // std::make_shared<ServiceManager>() _mm_channels;
+    ServiceManager::ptr _mm_channels;
+};
+
+class UserServer
+{
+public:
+    using ptr = std::shared_ptr<UserServer>;
+    UserServer(const Discovery::ptr &service_discover, const Registry::ptr &reg_client, const std::shared_ptr<elasticlient::Client> &es_client, 
+               const std::shared_ptr<odb::core::database> &mysql_client, const std::shared_ptr<sw::redis::Redis> &redis_client, const std::shared_ptr<brpc::Server> &server)
+        : _service_discover(service_discover)
+        , _registry_client(reg_client)
+        , _es_client(es_client)
+        , _mysql_client(mysql_client)
+        , _redis_client(redis_client)
+        , _rpc_server(server)
+    {}
+    ~UserServer(){}
+    // 搭建 RPC 服务器, 并启动服务器
+    void start()
+    {
+        _rpc_server->RunUntilAskedToQuit(); // 休眠等待运行结束
+    }
+private:
+    Discovery::ptr _service_discover;
+    Registry::ptr _registry_client;
+    std::shared_ptr<elasticlient::Client> _es_client;
+    std::shared_ptr<odb::core::database> _mysql_client;
+    std::shared_ptr<sw::redis::Redis> _redis_client;
+    std::shared_ptr<brpc::Server> _rpc_server;
+};
+
+// 使用了建造者模式, 把构造 UserServer 的过程封装起来了
+class UserServerBuilder
+{
+public: 
+    // 构造es客户端对象
+    void make_es_object(const std::vector<std::string> &host_list)
+    {
+        _es_client = ESClientFactory::create(host_list);
+    }
+    // 构造mysql管理对象
+    void make_mysql_object(const std::string &user, std::string &pswd, std::string &host, std::string &db, std::string &cset, int port, int conn_pool_count)
+    {
+        _mysql_client = ODBFactory::create(user, pswd, host, db, cset, port, conn_pool_count);
+    }
+    // 构成redis管理对象
+    void make_redis_object(const std::string &host, int port, int db, int conn_pool_count)
+    {
+        _redis_client = RedisClientFactory::create(host, port, db, conn_pool_count);
+    }
+    // 构造服务发现客户端对象
+    void make_discovery_object(const std::string &reg_host, const std::string &base_service_name, const std::string &file_service_name)
+    {
+        _file_service_name = file_service_name;
+        _mm_channels = std::make_shared<ServiceManager>();
+        _mm_channels->declared(file_service_name);
+        auto put_cb = std::bind(&ServiceManager::onServiceOnline, _mm_channels.get(), std::placeholders::_1, std::placeholders::_2);
+        auto del_cb = std::bind(&ServiceManager::onServiceOffline, _mm_channels.get(), std::placeholders::_1, std::placeholders::_2);
+        _service_discover = std::make_shared<Discovery>(reg_host, base_service_name, put_cb, del_cb);
+    }
+    // 构造服务注册客户端对象
+    void make_registry_object(const std::string &reg_host, const std::string &service_name, const std::string &access_host)
+    {
+        _registry_client = std::make_shared<Registry>(reg_host);
+        _registry_client->registry(service_name, access_host);
+    }
+    // 构造 RPC 服务器对象
+    void make_rpc_object(uint16_t port, int32_t timeout, uint8_t num_threads)
+    {
+        _rpc_server = std::make_shared<brpc::Server>();
+        UserServiceImpl *user_service = new UserServiceImpl(_file_service_name, _mm_channels);
+        int ret = _rpc_server->AddService(user_service, brpc::ServiceOwnership::SERVER_OWNS_SERVICE);  // brpc::ServiceOwnership::SERVER_OWNS_SERVICE -- 添加服务失败时, 服务器将负责删除服务对象
+        if(ret == -1)
+        {
+            LOG_ERROR("添加 RPC 服务失败! ");
+            abort();
+        }
+        brpc::ServerOptions options;
+        options.idle_timeout_sec = timeout; // 连接空闲超时时间 -- 超时后连接被关闭
+        options.num_threads = num_threads; // io 线程数量
+        ret = _rpc_server->Start(port, &options);
+        if(ret == -1)
+        {
+            LOG_ERROR("服务器启动失败! ");
+            abort();
+        }
+    }
+    UserServer::ptr build()
+    {
+        // 对上面的几个操作进行检验
+        if(!_es_client)
+        {
+            LOG_ERROR("还未初始化ES搜索引擎模块! ");
+            abort();
+        }
+        if(!_mysql_client)
+        {
+            LOG_ERROR("还未初始化MySQL数据库模块! ");
+            abort();
+        }
+        if(!_redis_client)
+        {
+            LOG_ERROR("还未初始化Redis数据库模块! ");
+            abort();
+        }
+        if(!_service_discover)
+        {
+            LOG_ERROR("还未初始化服务发现块! ");
+            abort();
+        }
+        if(!_mm_channels)
+        {
+            LOG_ERROR("还未初始化信道管理模块! ");
+            abort();
+        }
+        UserServer::ptr server = std::make_shared<UserServer>(_service_discover, _registry_client, _es_client, _mysql_client, _redis_client, _rpc_server);
+        return server;
+    }
+private:
+    Registry::ptr _registry_client;
+
+    std::shared_ptr<elasticlient::Client> _es_client;
+    std::shared_ptr<odb::core::database> _mysql_client;
+    std::shared_ptr<sw::redis::Redis> _redis_client;
+
+    std::string _file_service_name;
+    ServiceManager::ptr _mm_channels;
+    Discovery::ptr _service_discover;
+
+    std::shared_ptr<brpc::Server> _rpc_server;
+};
+}

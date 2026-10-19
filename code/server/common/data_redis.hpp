@@ -24,6 +24,7 @@ namespace lotso_im {
     class Session
     {
     public:
+        using ptr = std::shared_ptr<Session>;
         Session(std::shared_ptr<sw::redis::Redis> &redis_client): _redis_client(redis_client)
         {}
         void append(const std::string &ssid, const std::string &uid)
@@ -45,6 +46,7 @@ namespace lotso_im {
     class Status
     {
     public:
+        using ptr = std::shared_ptr<Status>;
         Status(std::shared_ptr<sw::redis::Redis> &redis_client): _redis_client(redis_client)
         {}
         void append(const std::string &uid)
@@ -68,6 +70,7 @@ namespace lotso_im {
     class Codes
     {
     public:
+        using ptr = std::shared_ptr<Codes>;
         Codes(std::shared_ptr<sw::redis::Redis> &redis_client): _redis_client(redis_client)
         {}
         void append(const std::string &cid, const std::string &code, const std::chrono::milliseconds &t = std::chrono::milliseconds(60000))
