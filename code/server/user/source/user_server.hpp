@@ -4,9 +4,11 @@
 #include <brpc/closure_guard.h>
 #include <cstdlib>
 #include <elasticlient/client.h>
+#include <linux/falloc.h>
 #include <memory>
 #include <odb/forward.hxx>
 #include <string>
+#include <sw/redis++/redis.h>
 #include <vector>
 #include "asr.hpp"        // 语音识别模块封装
 #include "channel.hpp"
@@ -15,6 +17,9 @@
 #include "data_mysql.hpp"    // mysql 数据管理客户端封装
 #include "data_redis.hpp"    // redis 数据管理客户端封装
 #include "logger.hpp"     // 日志模块封装
+#include "utils.hpp"      // 基础工具接口
+#include "user.hxx"
+#include "user-odb.hxx"
 #include "base.pb.h"    // protobuf 框架代码
 #include "user.pb.h"    // protobuf 框架代码
 #include "file.pb.h"    // protobuf 框架代码
@@ -24,7 +29,15 @@ namespace lotso_im {
 class UserServiceImpl : public lotso_im::UserService
 {
 public:
-    UserServiceImpl(const std::string &file_service_name, const ServiceManager::ptr &mm_channels): _file_service_name(file_service_name), _mm_channels(mm_channels)
+    UserServiceImpl(const std::shared_ptr<elasticlient::Client> &es_client, const std::shared_ptr<odb::core::database> &mysql_client, const std::shared_ptr<sw::redis::Redis> &redis_client, 
+                    const ServiceManager::ptr &mm_channels, const std::string &file_service_name)
+                    : _es_user(std::make_shared<ESUser>(es_client))
+                    , _mysql_user(std::make_shared<UserTable>(mysql_client))
+                    , _redis_session(std::make_shared<Session>(redis_client))
+                    , _redis_status(std::make_shared<Status>(redis_client))
+                    , _redis_codes(std::make_shared<Codes>(redis_client))
+                    , _mm_channels(mm_channels)
+                    ,_file_service_name(file_service_name)
     {}
    ~UserServiceImpl(){}
     virtual void UserRegister(::google::protobuf::RpcController* controller,
@@ -32,6 +45,51 @@ public:
                         ::lotso_im::UserRegisterRsp* response,
                     ::google::protobuf::Closure* done){
         brpc::ClosureGuard rpc_guard(done);
+        // 0. 定义一个错误处理函数, 当出错的时候进行调用 -- 这里在函数内部实现是因为每个接口的错误返回格式设置是不一样的
+        auto err_response = [this, response](const std::string &rid, const std::string &errmsg){
+            response->set_request_id(rid);
+            response->set_success(false);
+            response->set_errmsg(errmsg);
+            return;
+        };
+        // 1. 从请求中取出昵称和密码
+        std::string nickname = request->nickname();
+        std::string password = request->password();
+        // 2. 检查昵称是否合法(不超过22位即可)
+        bool ret = nickname_check(nickname);
+        if(ret == false) {
+            LOG_ERROR("{} - 用户名长度不合法! ", request->request_id());
+            return err_response(request->request_id(), "用户名长度不合法! ");
+        }
+        // 3. 检查密码是否合法(只能包含字母, 数字, 长度限制 6 - 15 之间, 还可以用 '-' 和 '_')
+        ret = password_check(password);
+        if(ret == false) {
+            LOG_ERROR("{} - 密码格式不合法! ", request->request_id());
+            return err_response(request->request_id(), "密码格式不合法! ");
+        }
+        // 4. 根据昵称在数据库进行判断是否已存在
+        auto user = _mysql_user->select_by_nickname(nickname);
+        if(user) {
+            LOG_ERROR("{} - 用户名被占用 - {}! ", request->request_id(), nickname);
+            return err_response(request->request_id(), "用户名被占用! ");
+        }
+        // 5. 向数据库新增数据
+        std::string uid = uuid();
+        user = std::make_shared<User>(uid, nickname, password);
+        ret = _mysql_user->insert(user);
+        if(user) {
+            LOG_ERROR("{} - MySQL数据库新增数据失败! ", request->request_id());
+            return err_response(request->request_id(), "MySQL数据库新增数据失败! ");
+        }
+        // 6. 向 ES 服务器中新增用户信息
+        ret = _es_user->appendData(uid, nickname, "", "", "");
+        if(user) {
+            LOG_ERROR("{} - MySQL数据库新增数据失败! ", request->request_id());
+            return err_response(request->request_id(), "MySQL数据库新增数据失败! ");
+        }
+        // 7. 组织响应, 进行成功与否的响应即可
+        response->set_request_id(request->request_id());
+        response->set_success(true);
     }
                         
     virtual void UserLogin(::google::protobuf::RpcController* controller,
@@ -94,12 +152,33 @@ public:
                         ::google::protobuf::Closure* done){
         brpc::ClosureGuard rpc_guard(done);
     }
-
+private:
+    bool nickname_check(const std::string &nickname) {
+        return nickname.size() < 22;
+    }
+    bool password_check(const std::string &password) {
+        if(password.size() < 6 || password.size() > 15) {
+            LOG_ERROR("密码长度不合法: {}-{}", password, password.size());
+            return false;
+        }
+        for(int i = 0; i < password.size(); i++)
+        {
+            if(!((password[i] > 'a' && password[i] < 'z') ||
+                (password[i] > 'A' && password[i] < 'Z') ||
+                (password[i] > '0' && password[i] < '9') ||
+                (password[i] == '_' && password[i] < '-')
+            )) {
+                LOG_ERROR("密码字符不合法: {}", password);
+                return false;
+            }
+        }
+        return true;
+    }
 private:
     ESUser::ptr _es_user;
     UserTable::ptr _mysql_user;
     Session::ptr _redis_session;
-    Status::ptr _redis_Status;
+    Status::ptr _redis_status;
     Codes::ptr _redis_codes;
     // 这边是 rpc 调用客户端相关对象
     std::string _file_service_name;
@@ -174,7 +253,7 @@ public:
     void make_rpc_object(uint16_t port, int32_t timeout, uint8_t num_threads)
     {
         _rpc_server = std::make_shared<brpc::Server>();
-        UserServiceImpl *user_service = new UserServiceImpl(_file_service_name, _mm_channels);
+        UserServiceImpl *user_service = new UserServiceImpl(_es_client, _mysql_client, _redis_client, _mm_channels, _file_service_name);
         int ret = _rpc_server->AddService(user_service, brpc::ServiceOwnership::SERVER_OWNS_SERVICE);  // brpc::ServiceOwnership::SERVER_OWNS_SERVICE -- 添加服务失败时, 服务器将负责删除服务对象
         if(ret == -1)
         {
