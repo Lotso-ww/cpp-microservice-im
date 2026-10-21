@@ -8,10 +8,10 @@
 namespace lotso_im {
 
 // 阿里云号码认证服务(Dypnsapi) —— 业务配置硬编码，AK/SK 自动从环境变量读
-class DMS
+class DMSClient
 {
 public:
-    using ptr = std::shared_ptr<DMS>;
+    using ptr = std::shared_ptr<DMSClient>;
 
     // 业务固定配置
     static constexpr const char *SIGN_NAME      = "恒创联众";
@@ -19,7 +19,7 @@ public:
     static constexpr const char *TEMPLATE_PARAM = R"({"code":"##code##","min":"5"})";
 
     // 零参数构造 —— AK/SK 自动从环境变量 ALIBABA_CLOUD_ACCESS_KEY_ID / SECRET 读
-    DMS()
+    DMSClient()
     {
         const char *ak = getenv("ALIBABA_CLOUD_ACCESS_KEY_ID");
         const char *sk = getenv("ALIBABA_CLOUD_ACCESS_KEY_SECRET");

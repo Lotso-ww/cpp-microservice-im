@@ -44,6 +44,7 @@ int main(int argc, char *argv[])
 
     lotso_im::UserServerBuilder usb;
     usb.make_es_object({FLAGS_es_host});
+    usb.make_dms_object();
     usb.make_mysql_object(FLAGS_mysql_user, FLAGS_mysql_pwd, FLAGS_mysql_host, FLAGS_mysql_db, FLAGS_mysql_cset, FLAGS_mysql_port, FLAGS_mysql_pool_count);
     usb.make_redis_object(FLAGS_redis_host, FLAGS_redis_port, FLAGS_redis_db, FLAGS_redis_keep_alive);
     usb.make_discovery_object(FLAGS_registry_host, FLAGS_base_service, FLAGS_file_service);

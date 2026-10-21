@@ -12,6 +12,7 @@
 #include <vector>
 #include "asr.hpp"        // 语音识别模块封装
 #include "channel.hpp"
+#include "dms.hpp"
 #include "etcd.hpp"       // 服务注册模块封装
 #include "data_es.hpp"    // es 数据管理客户端封装
 #include "data_mysql.hpp"    // mysql 数据管理客户端封装
@@ -30,14 +31,15 @@ class UserServiceImpl : public lotso_im::UserService
 {
 public:
     UserServiceImpl(const std::shared_ptr<elasticlient::Client> &es_client, const std::shared_ptr<odb::core::database> &mysql_client, const std::shared_ptr<sw::redis::Redis> &redis_client, 
-                    const ServiceManager::ptr &mm_channels, const std::string &file_service_name)
+                    const ServiceManager::ptr &mm_channels, const std::string &file_service_name, const DMSClient::ptr dms_client)
                     : _es_user(std::make_shared<ESUser>(es_client))
                     , _mysql_user(std::make_shared<UserTable>(mysql_client))
                     , _redis_session(std::make_shared<Session>(redis_client))
                     , _redis_status(std::make_shared<Status>(redis_client))
                     , _redis_codes(std::make_shared<Codes>(redis_client))
                     , _mm_channels(mm_channels)
-                    ,_file_service_name(file_service_name)
+                    , _file_service_name(file_service_name)
+                    , _dms_client(dms_client)
     {}
    ~UserServiceImpl(){}
     virtual void UserRegister(::google::protobuf::RpcController* controller,
@@ -122,6 +124,7 @@ public:
         // 4. 构造会话ID, 生成会话键值对, 向 redis 中添加会话信息以及登录标记信息
         std::string ssid = uuid();
         _redis_session->append(ssid, user->user_id());
+        _redis_status->append(user->user_id());
         // 5. 组织响应, 返回生成的会话ID
         response->set_request_id(request->request_id());
         response->set_success(true);
@@ -131,6 +134,34 @@ public:
                         ::lotso_im::PhoneVerifyCodeRsp* response,
                         ::google::protobuf::Closure* done){
         brpc::ClosureGuard rpc_guard(done);
+        // 0. 定义一个错误处理函数, 当出错的时候进行调用 -- 这里在函数内部实现是因为每个接口的错误返回格式设置是不一样的
+        auto err_response = [this, response](const std::string &rid, const std::string &errmsg){
+            response->set_request_id(rid);
+            response->set_success(false);
+            response->set_errmsg(errmsg);
+            return;
+        };
+        // 1. 从请求中取出手机号
+        std::string phone = request->phone_number();
+        // 2. 验证手机号码格式是否正确(必须是 1 开始, 第二位 3-9 之间, 后面 9 个数字字符)
+        bool ret = phone_check(phone);
+        if(ret == false) {
+            LOG_ERROR("{} - 手机号码格式错误 - {}! ", request->request_id(), phone);
+            return err_response(request->request_id(), "手机号码格式错误! ");
+        }
+        // 3. 基于短信平台 SDK 发送验证码 -- 这个可以直接传手机号, 平台那边自动生成, 但是要随机生成一个 code_id
+        std::string code_id = uuid();
+        std::string code = _dms_client->send(phone);
+        if(code == "") {
+            LOG_ERROR("{} - 短信验证码发送失败 - {}! ", request->request_id(), phone);
+            return err_response(request->request_id(), "短信验证码发送失败! ");
+        }
+        // 4. 构造验证码 ID, 添加到 redis 验证码映射键值索引中
+        _redis_codes->append(code_id, code);
+        // 5. 组织响应, 返回生成的验证码 ID
+        response->set_request_id(request->request_id());
+        response->set_success(true);
+        response->set_verify_code_id(code_id);
     }
     virtual void PhoneRegister(::google::protobuf::RpcController* controller,
                         const ::lotso_im::PhoneRegisterReq* request,
@@ -202,6 +233,15 @@ private:
         }
         return true;
     }
+    bool phone_check(const std::string &phone) {
+        if(phone.size() < 1) return false;
+        if(phone[0] != '1') return false;
+        if(phone[1] < '3' || phone[1] > '9') return false;
+        for(int i = 2; i < 11; i++) {
+            if(phone[i] < '0' || phone[i] > '9') return false;
+        }
+        return true;
+    }
 private:
     ESUser::ptr _es_user;
     UserTable::ptr _mysql_user;
@@ -210,8 +250,8 @@ private:
     Codes::ptr _redis_codes;
     // 这边是 rpc 调用客户端相关对象
     std::string _file_service_name;
-    // std::make_shared<ServiceManager>() _mm_channels;
     ServiceManager::ptr _mm_channels;
+    DMSClient::ptr _dms_client;
 };
 
 class UserServer
@@ -251,6 +291,11 @@ public:
     {
         _es_client = ESClientFactory::create(host_list);
     }
+    // 构造短信验证客户端对象
+    void make_dms_object()
+    {
+        _dms_client = std::make_shared<DMSClient>(); // 自己内部会去读环境变量, 我设置好了, 如果没环境变量的话可能得自己配置一下
+    }
     // 构造mysql管理对象
     void make_mysql_object(const std::string &user, std::string &pswd, std::string &host, std::string &db, std::string &cset, int port, int conn_pool_count)
     {
@@ -280,8 +325,33 @@ public:
     // 构造 RPC 服务器对象
     void make_rpc_object(uint16_t port, int32_t timeout, uint8_t num_threads)
     {
+        if(!_es_client)
+        {
+            LOG_ERROR("还未初始化ES搜索引擎模块! ");
+            abort();
+        }
+        if(!_mysql_client)
+        {
+            LOG_ERROR("还未初始化MySQL数据库模块! ");
+            abort();
+        }
+        if(!_redis_client)
+        {
+            LOG_ERROR("还未初始化Redis数据库模块! ");
+            abort();
+        }
+        if(!_mm_channels)
+        {
+            LOG_ERROR("还未初始化信道管理模块! ");
+            abort();
+        }
+        if(!_dms_client)
+        {
+            LOG_ERROR("还未初始化短信平台模块! ");
+            abort();
+        }
         _rpc_server = std::make_shared<brpc::Server>();
-        UserServiceImpl *user_service = new UserServiceImpl(_es_client, _mysql_client, _redis_client, _mm_channels, _file_service_name);
+        UserServiceImpl *user_service = new UserServiceImpl(_es_client, _mysql_client, _redis_client, _mm_channels, _file_service_name, _dms_client);
         int ret = _rpc_server->AddService(user_service, brpc::ServiceOwnership::SERVER_OWNS_SERVICE);  // brpc::ServiceOwnership::SERVER_OWNS_SERVICE -- 添加服务失败时, 服务器将负责删除服务对象
         if(ret == -1)
         {
@@ -301,29 +371,19 @@ public:
     UserServer::ptr build()
     {
         // 对上面的几个操作进行检验
-        if(!_es_client)
-        {
-            LOG_ERROR("还未初始化ES搜索引擎模块! ");
-            abort();
-        }
-        if(!_mysql_client)
-        {
-            LOG_ERROR("还未初始化MySQL数据库模块! ");
-            abort();
-        }
-        if(!_redis_client)
-        {
-            LOG_ERROR("还未初始化Redis数据库模块! ");
-            abort();
-        }
         if(!_service_discover)
         {
-            LOG_ERROR("还未初始化服务发现块! ");
+            LOG_ERROR("还未初始化服务发现模块! ");
             abort();
         }
-        if(!_mm_channels)
+        if(!_registry_client)
         {
-            LOG_ERROR("还未初始化信道管理模块! ");
+            LOG_ERROR("还未初始化服务注册模块! ");
+            abort();
+        }
+        if(!_rpc_server)
+        {
+            LOG_ERROR("还未初始化RPC服务器模块! ");
             abort();
         }
         UserServer::ptr server = std::make_shared<UserServer>(_service_discover, _registry_client, _es_client, _mysql_client, _redis_client, _rpc_server);
@@ -339,6 +399,7 @@ private:
     std::string _file_service_name;
     ServiceManager::ptr _mm_channels;
     Discovery::ptr _service_discover;
+    DMSClient::ptr _dms_client;
 
     std::shared_ptr<brpc::Server> _rpc_server;
 };
