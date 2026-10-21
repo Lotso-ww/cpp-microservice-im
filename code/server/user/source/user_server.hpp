@@ -97,6 +97,34 @@ public:
                         ::lotso_im::UserLoginRsp* response,
                         ::google::protobuf::Closure* done){
         brpc::ClosureGuard rpc_guard(done);
+        // 0. 定义一个错误处理函数, 当出错的时候进行调用 -- 这里在函数内部实现是因为每个接口的错误返回格式设置是不一样的
+        auto err_response = [this, response](const std::string &rid, const std::string &errmsg){
+            response->set_request_id(rid);
+            response->set_success(false);
+            response->set_errmsg(errmsg);
+            return;
+        };
+        // 1. 从请求中取出昵称和密码
+        std::string nickname = request->nickname();
+        std::string password = request->password();
+        // 2. 通过昵称获取用户信息, 进行密码是否一致的判断
+        auto user = _mysql_user->select_by_nickname(nickname);
+        if(!user || password != *user->password()) {
+            LOG_ERROR("{} - 用户名或者密码错误 - {}-{}", request->request_id(), nickname, password);
+            return err_response(request->request_id(), "用户名或密码错误! ");
+        }
+        // 3. 根据 redis 中的登录标记信息是否存在判断用户是否已经登录
+        bool ret = _redis_status->exists(user->user_id());
+        if(ret == true) {
+            LOG_ERROR("{} - 用户已在其他地方登录 - {}! ", request->request_id(), nickname);
+            return err_response(request->request_id(), "用户已在其他地方登录! ");
+        }
+        // 4. 构造会话ID, 生成会话键值对, 向 redis 中添加会话信息以及登录标记信息
+        std::string ssid = uuid();
+        _redis_session->append(ssid, user->user_id());
+        // 5. 组织响应, 返回生成的会话ID
+        response->set_request_id(request->request_id());
+        response->set_success(true);
     }
     virtual void GetPhoneVerifyCode(::google::protobuf::RpcController* controller,
                         const ::lotso_im::PhoneVerifyCodeReq* request,
