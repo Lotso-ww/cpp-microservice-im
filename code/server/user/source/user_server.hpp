@@ -86,8 +86,8 @@ public:
         // 6. 向 ES 服务器中新增用户信息
         ret = _es_user->appendData(uid, nickname, "", "", "");
         if(user) {
-            LOG_ERROR("{} - MySQL数据库新增数据失败! ", request->request_id());
-            return err_response(request->request_id(), "MySQL数据库新增数据失败! ");
+            LOG_ERROR("{} - ES搜索引擎新增数据失败! ", request->request_id());
+            return err_response(request->request_id(), "ES搜索引擎新增数据失败! ");
         }
         // 7. 组织响应, 进行成功与否的响应即可
         response->set_request_id(request->request_id());
@@ -167,7 +167,53 @@ public:
                         const ::lotso_im::PhoneRegisterReq* request,
                         ::lotso_im::PhoneRegisterRsp* response,
                         ::google::protobuf::Closure* done){
-        brpc::ClosureGuard rpc_guard(done); 
+        brpc::ClosureGuard rpc_guard(done);
+        // 0. 定义一个错误处理函数, 当出错的时候进行调用 -- 这里在函数内部实现是因为每个接口的错误返回格式设置是不一样的
+        auto err_response = [this, response](const std::string &rid, const std::string &errmsg){
+            response->set_request_id(rid);
+            response->set_success(false);
+            response->set_errmsg(errmsg);
+            return;
+        };
+        // 1. 从请求中取出手机号, 验证码ID, 验证码
+        std::string phone = request->phone_number();
+        std::string code_id = request->verify_code_id();
+        std::string code = request->verify_code();
+        // 2. 检查注册手机号码是否合法
+        bool ret = phone_check(phone);
+        if(ret == false) {
+            LOG_ERROR("{} - 手机号码格式错误 - {}! ", request->request_id(), phone);
+            return err_response(request->request_id(), "手机号码格式错误! ");
+        }
+        // 3. 从 redis 中进行 验证码ID - 验证码 一致性验证
+        auto vcode = _redis_codes->code(code_id);
+        if(vcode != code) {
+            LOG_ERROR("{} - 验证码错误 - {}-{}! ", request->request_id(), code_id, code);
+            return err_response(request->request_id(), "验证码错误! ");
+        }
+        // 4. 通过数据库查询判断手机号是否已经注册过
+        auto user = _mysql_user->select_by_phone(phone);
+        if(user) {
+            LOG_ERROR("{} - 该手机号已注册过用户 - {}! ", request->request_id(), phone);
+            return err_response(request->request_id(), "该手机号已注册过用户! ");
+        }
+        // 5. 向数据库新增用户信息
+        std::string uid = uuid();
+        user = std::make_shared<User>(uid, phone);
+        ret = _mysql_user->insert(user);
+        if(user) {
+            LOG_ERROR("{} - 向数据库添加用户信息失败 - {}! ", request->request_id(), phone);
+            return err_response(request->request_id(), "向数据库添加用户信息失败! ");
+        }
+        // 6. 向 ES 服务器中新增用户信息
+        ret = _es_user->appendData(uid, uid, phone, "", "");
+        if(user) {
+            LOG_ERROR("{} - ES搜索引擎新增数据失败! ", request->request_id());
+            return err_response(request->request_id(), "ES搜索引擎新增数据失败! ");
+        }
+        // 7. 组织响应, 进行成功与否的响应即可
+        response->set_request_id(request->request_id());
+        response->set_success(true);
     }
     virtual void PhoneLogin(::google::protobuf::RpcController* controller,
                         const ::lotso_im::PhoneLoginReq* request,
