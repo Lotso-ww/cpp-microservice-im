@@ -127,6 +127,7 @@ public:
         _redis_status->append(user->user_id());
         // 5. 组织响应, 返回生成的会话ID
         response->set_request_id(request->request_id());
+        response->set_login_session_id(ssid);
         response->set_success(true);
     }
     virtual void GetPhoneVerifyCode(::google::protobuf::RpcController* controller,
