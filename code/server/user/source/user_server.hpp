@@ -1,4 +1,5 @@
 //实现用户管理子服务
+#include <brpc/controller.h>
 #include <brpc/server.h>
 #include <butil/logging.h>
 #include <brpc/closure_guard.h>
@@ -221,12 +222,100 @@ public:
                         ::lotso_im::PhoneLoginRsp* response,
                         ::google::protobuf::Closure* done){
         brpc::ClosureGuard rpc_guard(done);
+        // 0. 定义一个错误处理函数, 当出错的时候进行调用 -- 这里在函数内部实现是因为每个接口的错误返回格式设置是不一样的
+        auto err_response = [this, response](const std::string &rid, const std::string &errmsg){
+            response->set_request_id(rid);
+            response->set_success(false);
+            response->set_errmsg(errmsg);
+            return;
+        };
+        // 1. 从请求中取出手机号码和验证码ID以及验证码
+        std::string phone = request->phone_number();
+        std::string code_id = request->verify_code_id();
+        std::string code = request->verify_code();
+        // 2. 检查注册手机号码是否合法
+        bool ret = phone_check(phone);
+        if(ret == false) {
+            LOG_ERROR("{} - 手机号码格式错误 - {}! ", request->request_id(), phone);
+            return err_response(request->request_id(), "手机号码格式错误! ");
+        }
+        // 3. 根据手机号从数据库进行用户信息查询，判断用户是否存在
+        auto user = _mysql_user->select_by_phone(phone);
+        if(user) {
+            LOG_ERROR("{} - 该手机号未注册过用户 - {}! ", request->request_id(), phone);
+            return err_response(request->request_id(), "该手机号未注册过用户! ");
+        }
+        // 4. 从 redis 数据库中进行验证码ID -- 验证码一致性匹配
+        auto vcode = _redis_codes->code(code_id);
+        if(vcode != code) {
+            LOG_ERROR("{} - 验证码错误 - {}-{}! ", request->request_id(), code_id, code);
+            return err_response(request->request_id(), "验证码错误! ");
+        }
+        _redis_codes->remove(code_id);
+        // 5. 根据 redis 中的登录标记信息是否存在判断用户是否已经登录
+        ret = _redis_status->exists(user->user_id());
+        if(ret == true) {
+            LOG_ERROR("{} - 用户已在其他地方登录 - {}!", request->request_id(), phone);
+            return err_response(request->request_id(), "用户已在其他地方登录! ");
+        }
+        // 6. 构造会话 ID, 生成会话键值对, 向 redis 中添加会话信息以及登录标记信息
+        std::string ssid = uuid();
+        _redis_session->append(ssid, user->user_id());
+        // 7. 组织响应, 返回生成的会话 ID
+        response->set_request_id(request->request_id());
+        response->set_login_session_id(ssid);
+        response->set_success(true);
     }
     virtual void GetUserInfo(::google::protobuf::RpcController* controller,
                         const ::lotso_im::GetUserInfoReq* request,
                         ::lotso_im::GetUserInfoRsp* response,
                         ::google::protobuf::Closure* done){
         brpc::ClosureGuard rpc_guard(done);
+        // 0. 定义一个错误处理函数, 当出错的时候进行调用 -- 这里在函数内部实现是因为每个接口的错误返回格式设置是不一样的
+        auto err_response = [this, response](const std::string &rid, const std::string &errmsg){
+            response->set_request_id(rid);
+            response->set_success(false);
+            response->set_errmsg(errmsg);
+            return;
+        };
+        // 1. 从请求中取出用户 ID
+        std::string uid = request->user_id();
+        // 2. 通过用户 ID, 从数据库中查询用户信息
+        auto user = _mysql_user->select_by_id(uid);
+        if(!user) {
+            LOG_ERROR("{} - 未找到用户信息 - {}! ", request->request_id(), uid);
+            return err_response(request->request_id(), "未找到用户信息! ");
+        }
+        // 3. 根据用户信息中的头像 ID, 从文件服务器获取头像文件数据, 组织完整用户信息
+        UserInfo *user_info = response->mutable_user_info();
+        user_info->set_user_id(user->user_id());
+        if(user->nickname()) user_info->set_nickname(*user->nickname());
+        if(user->description()) user_info->set_description(*user->description());
+        if(user->phone()) user_info->set_phone(*user->phone());
+        if(user->avatar_id()) {
+            // 从信道管理对象中获取到连接了文件管理自服务的 channel
+            auto channel = _mm_channels->choose(_file_service_name);
+            if(!channel) {
+                LOG_ERROR("{} - 未找到文件管理子服务节点 - {}! ", request->request_id(), uid);
+                return err_response(request->request_id(), "未找到文件管理子服务节点! ");
+            }
+            // 进行文件子服务的 rpc 请求, 进行头像文件下载
+            lotso_im::FileService_Stub stub(channel.get());
+            lotso_im::GetSingleFileReq req;
+            lotso_im::GetSingleFileRsp rsp;
+            req.set_request_id(request->request_id());
+            req.set_file_id(*user->avatar_id());
+            brpc::Controller cntl;
+            stub.GetSingleFile(&cntl, &req, &rsp, nullptr);
+            if(cntl.Failed() == true) {
+                LOG_ERROR("{} - 文件子服务调用失败 - {}", request->request_id(), cntl.ErrorText());
+                return err_response(request->request_id(), "文件子服务调用失败!");
+            }
+            user_info->set_avatar(rsp.file_data().file_content());
+        }
+        // 4. 组织响应, 返回生成的会话 ID
+        response->set_request_id(request->request_id());
+        response->set_success(true);
     }
     virtual void GetMultiUserInfo(::google::protobuf::RpcController* controller,
                         const ::lotso_im::GetMultiUserInfoReq* request,
