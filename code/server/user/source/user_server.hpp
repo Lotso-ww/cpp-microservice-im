@@ -3,6 +3,7 @@
 #include <brpc/server.h>
 #include <butil/logging.h>
 #include <brpc/closure_guard.h>
+#include <cstddef>
 #include <cstdlib>
 #include <elasticlient/client.h>
 #include <linux/falloc.h>
@@ -322,6 +323,57 @@ public:
                         ::lotso_im::GetMultiUserInfoRsp* response,
                         ::google::protobuf::Closure* done){
         brpc::ClosureGuard rpc_guard(done);
+        // 0. 定义一个错误处理函数, 当出错的时候进行调用 -- 这里在函数内部实现是因为每个接口的错误返回格式设置是不一样的
+        auto err_response = [this, response](const std::string &rid, const std::string &errmsg){
+            response->set_request_id(rid);
+            response->set_success(false);
+            response->set_errmsg(errmsg);
+            return;
+        };
+        // 1. 从请求中取出用户ID -- 列表
+        std::vector<std::string> uid_lists;
+        for(int i = 0; i < request->users_id_size(); i++) {
+            uid_lists.push_back(request->users_id(i));
+        }
+        // 2. 从数据库进行批量用户信息查询
+        auto users = _mysql_user->select_multi_users(uid_lists);
+        if(users.size() != request->users_id_size()) {
+            LOG_ERROR("{} - 从数据库中查找出来的用户信息数量不一致 {}-{}! ", request->request_id(), request->users_id_size(), users.size());
+            return err_response(request->request_id(), "从数据库中查找出来的用户信息数量不一致!");
+        }
+        // 3. 批量从文件管理子服务进行文件下载
+        auto channel = _mm_channels->choose(_file_service_name);
+        if(!channel) {
+            LOG_ERROR("{} - 未找到文件管理子服务节点!", request->request_id());
+            return err_response(request->request_id(), "未找到文件管理子服务节点! ");
+        }
+        lotso_im::FileService_Stub stub(channel.get());
+        lotso_im::GetMultiFileReq req;
+        lotso_im::GetMultiFileRsp rsp;
+        req.set_request_id(request->request_id());
+        for(auto &user : users) {
+            req.add_file_id_list(*user.avatar_id());
+        }
+        brpc::Controller cntl;
+        stub.GetMultiFile(&cntl, &req, &rsp, nullptr);
+        if(cntl.Failed() == true) {
+            LOG_ERROR("{} - 文件子服务调用失败 - {}", request->request_id(), cntl.ErrorText());
+            return err_response(request->request_id(), "文件子服务调用失败!");
+        }
+        // 4. 组织响应
+        for(auto &user : users) {
+            auto user_map = response->mutable_users_info(); // 本次请求要响应的用户信息 map
+            auto file_map = rsp.mutable_file_data(); // 这是批量文件请求响应中的 map
+            UserInfo user_info;
+            user_info.set_user_id(user.user_id());
+            if(user.nickname()) user_info.set_nickname(*user.nickname());
+            if(user.description()) user_info.set_description(*user.description());
+            if(user.phone()) user_info.set_phone(*user.phone());
+            if(user.avatar_id()) user_info.set_avatar((*file_map)[user.avatar_id()].file_content());
+            (*user_map)[user_info.user_id()] = user_info;
+        }
+        response->set_request_id(request->request_id());
+        response->set_success(true);
     }
     virtual void SetUserAvatar(::google::protobuf::RpcController* controller,
                         const ::lotso_im::SetUserAvatarReq* request,
