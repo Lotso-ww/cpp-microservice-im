@@ -308,7 +308,7 @@ public:
             req.set_file_id(*user->avatar_id());
             brpc::Controller cntl;
             stub.GetSingleFile(&cntl, &req, &rsp, nullptr);
-            if(cntl.Failed() == true) {
+            if(cntl.Failed() == true || rsp.success() == false) {
                 LOG_ERROR("{} - 文件子服务调用失败 - {}", request->request_id(), cntl.ErrorText());
                 return err_response(request->request_id(), "文件子服务调用失败!");
             }
@@ -356,7 +356,7 @@ public:
         }
         brpc::Controller cntl;
         stub.GetMultiFile(&cntl, &req, &rsp, nullptr);
-        if(cntl.Failed() == true) {
+        if(cntl.Failed() == true || rsp.success() == false) {
             LOG_ERROR("{} - 文件子服务调用失败 - {}", request->request_id(), cntl.ErrorText());
             return err_response(request->request_id(), "文件子服务调用失败!");
         }
@@ -380,24 +380,191 @@ public:
                         ::lotso_im::SetUserAvatarRsp* response,
                         ::google::protobuf::Closure* done){
         brpc::ClosureGuard rpc_guard(done);
+        // 0. 定义一个错误处理函数, 当出错的时候进行调用 -- 这里在函数内部实现是因为每个接口的错误返回格式设置是不一样的
+        auto err_response = [this, response](const std::string &rid, const std::string &errmsg){
+            response->set_request_id(rid);
+            response->set_success(false);
+            response->set_errmsg(errmsg);
+            return;
+        };
+        // 1. 从请求中取出用户ID和头像数据 -- 头像数据在后续使用的时候取
+        std::string uid = request->user_id();
+        // 2. 从数据库通过用户ID进行用户信息查询, 判断用户是否存在
+        auto user = _mysql_user->select_by_id(uid);
+        if(!user) {
+            LOG_ERROR("{} - 未找到用户信息 - {}! ", request->request_id(), uid);
+            return err_response(request->request_id(), "未找到用户信息! ");
+        }
+        // 3. 上传头像文件到文件子服务
+        auto channel = _mm_channels->choose(_file_service_name);
+        if(!channel) {
+            LOG_ERROR("{} - 未找到文件管理子服务节点!", request->request_id());
+            return err_response(request->request_id(), "未找到文件管理子服务节点! ");
+        }
+        lotso_im::FileService_Stub stub(channel.get());
+        lotso_im::PutSingleFileReq req;
+        lotso_im::PutSingleFileRsp rsp;
+        req.set_request_id(request->request_id());
+        req.mutable_file_data()->set_file_name("");
+        req.mutable_file_data()->set_file_size(request->avatar().size());
+        req.mutable_file_data()->set_file_content(request->avatar());
+        brpc::Controller cntl;
+        stub.PutSingleFile(&cntl, &req, &rsp, nullptr);
+        if(cntl.Failed() == true || rsp.success() == false) {
+            LOG_ERROR("{} - 文件子服务调用失败 - {}", request->request_id(), cntl.ErrorText());
+            return err_response(request->request_id(), "文件子服务调用失败!");
+        }
+        std::string avatar_id = rsp.file_info().file_id();
+        // 4. 将返回的头像文件ID更新到数据库中
+        user->avatar_id(avatar_id);
+        bool ret = _mysql_user->update(user);
+        if(ret == false) {
+            LOG_ERROR("{} - 更新数据库用户头像ID失败: {}! ", request->request_id(), avatar_id);
+            return err_response(request->request_id(), "更新数据库用户头像ID失败!");
+        }
+        // 5. 更新 ES 服务器中用户信息
+        ret = _es_user->appendData(user->user_id(), *user->nickname(), *user->phone(), *user->description(),*user->avatar_id());
+        if(ret == false) {
+            LOG_ERROR("{} - 更新搜索引擎用户头像ID失败: {}! ", request->request_id(), avatar_id);
+            return err_response(request->request_id(), "更新搜索引擎用户头像ID失败!");
+        }
+        // 6. 组织响应, 返回更新成功与否
+        response->set_request_id(request->request_id());
+        response->set_success(true);    
     }
     virtual void SetUserNickname(::google::protobuf::RpcController* controller,
                         const ::lotso_im::SetUserNicknameReq* request,
                         ::lotso_im::SetUserNicknameRsp* response,
                         ::google::protobuf::Closure* done){
         brpc::ClosureGuard rpc_guard(done);
+        // 0. 定义一个错误处理函数, 当出错的时候进行调用 -- 这里在函数内部实现是因为每个接口的错误返回格式设置是不一样的
+        auto err_response = [this, response](const std::string &rid, const std::string &errmsg){
+            response->set_request_id(rid);
+            response->set_success(false);
+            response->set_errmsg(errmsg);
+            return;
+        };
+        // 1. 从请求中取出用户ID和新的昵称
+        std::string uid = request->user_id();
+        std::string new_nickname = request->nickname();
+        // 2. 判断昵称格式是否正确
+        bool ret = nickname_check(new_nickname);
+        if(ret == false) {
+            LOG_ERROR("{} - 用户名长度不合法! ", request->request_id());
+            return err_response(request->request_id(), "用户名长度不合法! ");
+        }
+        // 3. 从数据库通过用户ID进行用户信息查询, 判断用户是否存在
+        auto user = _mysql_user->select_by_id(uid);
+        if(!user) {
+            LOG_ERROR("{} - 未找到用户信息 - {}! ", request->request_id(), uid);
+            return err_response(request->request_id(), "未找到用户信息! ");
+        }
+        // 4. 将新的昵称更新到数据库中
+        user->nickname(new_nickname);
+        ret = _mysql_user->update(user);
+        if(ret == false) {
+            LOG_ERROR("{} - 更新数据库用户昵称失败: {}! ", request->request_id(), new_nickname);
+            return err_response(request->request_id(), "更新数据库用户昵称失败!");
+        }
+        // 5. 更新 ES 服务器中用户信息
+        ret = _es_user->appendData(user->user_id(), *user->nickname(), *user->phone(), *user->description(),*user->avatar_id());
+        if(ret == false) {
+            LOG_ERROR("{} - 更新搜索引擎用户昵称失败: {}! ", request->request_id(), new_nickname);
+            return err_response(request->request_id(), "更新搜索引擎用户昵称失败!");
+        }
+        // 6. 组织响应, 返回更新成功与否
+        response->set_request_id(request->request_id());
+        response->set_success(true);    
     }
     virtual void SetUserDescription(::google::protobuf::RpcController* controller,
                         const ::lotso_im::SetUserDescriptionReq* request,
                         ::lotso_im::SetUserDescriptionRsp* response,
                         ::google::protobuf::Closure* done){
         brpc::ClosureGuard rpc_guard(done);
+        // 0. 定义一个错误处理函数, 当出错的时候进行调用 -- 这里在函数内部实现是因为每个接口的错误返回格式设置是不一样的
+        auto err_response = [this, response](const std::string &rid, const std::string &errmsg){
+            response->set_request_id(rid);
+            response->set_success(false);
+            response->set_errmsg(errmsg);
+            return;
+        };
+        // 1. 从请求中取出用户ID和新的签名
+        std::string uid = request->user_id();
+        std::string new_description = request->description();
+        // 2. 从数据库通过用户ID进行用户信息查询, 判断用户是否存在
+        auto user = _mysql_user->select_by_id(uid);
+        if(!user) {
+            LOG_ERROR("{} - 未找到用户信息 - {}! ", request->request_id(), uid);
+            return err_response(request->request_id(), "未找到用户信息! ");
+        }
+        // 3. 将新的签名更新到数据库中
+        user->description(new_description);
+        bool ret = _mysql_user->update(user);
+        if(ret == false) {
+            LOG_ERROR("{} - 更新数据库用户签名失败: {}! ", request->request_id(), new_description);
+            return err_response(request->request_id(), "更新数据库用户签名失败!");
+        }
+        // 5. 更新 ES 服务器中用户信息
+        ret = _es_user->appendData(user->user_id(), *user->nickname(), *user->phone(), *user->description(),*user->avatar_id());
+        if(ret == false) {
+            LOG_ERROR("{} - 更新搜索引擎用户签名失败: {}! ", request->request_id(), new_description);
+            return err_response(request->request_id(), "更新搜索引擎用户签名失败!");
+        }
+        // 6. 组织响应, 返回更新成功与否
+        response->set_request_id(request->request_id());
+        response->set_success(true);    
     }
     virtual void SetUserPhoneNumber(::google::protobuf::RpcController* controller,
                         const ::lotso_im::SetUserPhoneNumberReq* request,
                         ::lotso_im::SetUserPhoneNumberRsp* response,
                         ::google::protobuf::Closure* done){
         brpc::ClosureGuard rpc_guard(done);
+        // 0. 定义一个错误处理函数, 当出错的时候进行调用 -- 这里在函数内部实现是因为每个接口的错误返回格式设置是不一样的
+        auto err_response = [this, response](const std::string &rid, const std::string &errmsg){
+            response->set_request_id(rid);
+            response->set_success(false);
+            response->set_errmsg(errmsg);
+            return;
+        };
+        // 1. 从请求中取出用户ID和新的手机号, 验证码, 验证码ID
+        std::string uid = request->user_id();
+        std::string new_phone = request->phone_number();
+        std::string code = request->phone_verify_code();
+        std::string code_id = request->phone_verify_code_id();
+        // 2. 判断手机号格式是否正确
+        bool ret = phone_check(new_phone);
+        if(ret == false) {
+            LOG_ERROR("{} - 手机号长度不合法! ", request->request_id());
+            return err_response(request->request_id(), "手机号长度不合法! ");
+        }
+        // 3. 对验证码进行验证
+        auto vcode = _redis_codes->code(code_id);
+        if(vcode != code) {
+            LOG_ERROR("{} - 验证码错误 - {}-{}! ", request->request_id(), code_id, code);
+            return err_response(request->request_id(), "验证码错误! ");
+        }
+        // 4. 从数据库通过用户ID进行用户信息查询, 判断用户是否存在
+        auto user = _mysql_user->select_by_id(uid);
+        if(!user) {
+            LOG_ERROR("{} - 未找到用户信息 - {}! ", request->request_id(), uid);
+            return err_response(request->request_id(), "未找到用户信息! ");
+        }
+        // 4. 将新的手机号更新到数据库中
+        user->phone(new_phone);
+        ret = _mysql_user->update(user);
+        if(ret == false) {
+            LOG_ERROR("{} - 更新数据库用户手机号失败: {}! ", request->request_id(), new_phone);
+            return err_response(request->request_id(), "更新数据库用户手机号失败!");
+        }
+        // 5. 更新 ES 服务器中用户信息
+        ret = _es_user->appendData(user->user_id(), *user->nickname(), *user->phone(), *user->description(),*user->avatar_id());
+        if(ret == false) {
+            LOG_ERROR("{} - 更新搜索引擎用户手机号失败: {}! ", request->request_id(), new_phone);
+            return err_response(request->request_id(), "更新搜索引擎用户手机号失败!");
+        }
+        // 6. 组织响应, 返回更新成功与否
+        response->set_request_id(request->request_id());
+        response->set_success(true);    
     }
 private:
     bool nickname_check(const std::string &nickname) {
