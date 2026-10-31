@@ -66,7 +66,7 @@ public:
             odb::transaction trans(_db->begin());
             typedef odb::query<User> query;
             typedef odb::result<User> result;
-            res = _db->query_one<User>(query::nickname == nickname);
+            res = std::shared_ptr<User>(_db->query_one<User>(query::nickname == nickname));
             trans.commit();
         } catch (const std::exception &e) {
             LOG_ERROR("根据昵称查询用户失败: {}:{}! ", nickname, e.what());
@@ -80,7 +80,7 @@ public:
             odb::transaction trans(_db->begin());
             typedef odb::query<User> query;
             typedef odb::result<User> result;
-            res = _db->query_one<User>(query::phone == phone);
+            res = std::shared_ptr<User>(_db->query_one<User>(query::phone == phone));
             trans.commit();
         } catch (const std::exception &e) {
             LOG_ERROR("根据手机号查询用户失败: {}:{}! ", phone, e.what());
@@ -94,7 +94,7 @@ public:
             odb::transaction trans(_db->begin());
             typedef odb::query<User> query;
             typedef odb::result<User> result;
-            res = _db->query_one<User>(query::user_id == user_id);
+            res = std::shared_ptr<User>(_db->query_one<User>(query::user_id == user_id));
             trans.commit();
         } catch (const std::exception &e) {
             LOG_ERROR("根据用户ID查询用户失败: {}:{}! ", user_id, e.what());

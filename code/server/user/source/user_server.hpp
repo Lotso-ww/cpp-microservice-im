@@ -3,7 +3,6 @@
 #include <brpc/server.h>
 #include <butil/logging.h>
 #include <brpc/closure_guard.h>
-#include <cstddef>
 #include <cstdlib>
 #include <elasticlient/client.h>
 #include <linux/falloc.h>
@@ -12,9 +11,8 @@
 #include <string>
 #include <sw/redis++/redis.h>
 #include <vector>
-#include "asr.hpp"        // 语音识别模块封装
-#include "channel.hpp"
-#include "dms.hpp"
+#include "channel.hpp"    // 信道管理模块封装
+#include "dms.hpp"        // 短信平台模块封装
 #include "etcd.hpp"       // 服务注册模块封装
 #include "data_es.hpp"    // es 数据管理客户端封装
 #include "data_mysql.hpp"    // mysql 数据管理客户端封装
@@ -369,7 +367,7 @@ public:
             if(user.nickname()) user_info.set_nickname(*user.nickname());
             if(user.description()) user_info.set_description(*user.description());
             if(user.phone()) user_info.set_phone(*user.phone());
-            if(user.avatar_id()) user_info.set_avatar((*file_map)[user.avatar_id()].file_content());
+            if(user.avatar_id()) user_info.set_avatar((*file_map)[*user.avatar_id()].file_content());
             (*user_map)[user_info.user_id()] = user_info;
         }
         response->set_request_id(request->request_id());

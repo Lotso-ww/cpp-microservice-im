@@ -51,4 +51,5 @@ code/server/proto/gen/
 
 # 本地 IDE / Agent 配置（仅个人开发环境使用，不提交）
 .trae/
+.vscode/
 .clangd
