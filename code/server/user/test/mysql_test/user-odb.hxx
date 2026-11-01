@@ -7,6 +7,17 @@
 #ifndef USER_ODB_HXX
 #define USER_ODB_HXX
 
+// Begin prologue.
+//
+#include <odb/boost/version.hxx>
+#if ODB_BOOST_VERSION != 2050000 // 2.5.0
+#  error ODB and C++ compilers see different libodb-boost interface versions
+#endif
+#include <odb/boost/date-time/mysql/gregorian-traits.hxx>
+#include <odb/boost/date-time/mysql/posix-time-traits.hxx>
+//
+// End prologue.
+
 #include <odb/version.hxx>
 
 #if ODB_VERSION != 20500UL
@@ -49,7 +60,7 @@ namespace odb
   {
     public:
     typedef ::lotso_im::User object_type;
-    typedef ::std::shared_ptr< ::lotso_im::User > pointer_type;
+    typedef ::lotso_im::User* pointer_type;
     typedef odb::pointer_traits<pointer_type> pointer_traits;
 
     static const bool polymorphic = false;
@@ -166,7 +177,7 @@ namespace odb
 
     static const phone_type_ phone;
 
-    // avarta_id
+    // avatar_id
     //
     typedef
     mysql::query_column<
@@ -174,9 +185,9 @@ namespace odb
         ::std::basic_string< char >,
         mysql::id_string >::query_type,
       mysql::id_string >
-    avarta_id_type_;
+    avatar_id_type_;
 
-    static const avarta_id_type_ avarta_id;
+    static const avatar_id_type_ avatar_id;
   };
 
   template <typename A>
@@ -210,9 +221,9 @@ namespace odb
   phone (A::table_name, "`phone`", 0);
 
   template <typename A>
-  const typename query_columns< ::lotso_im::User, id_mysql, A >::avarta_id_type_
+  const typename query_columns< ::lotso_im::User, id_mysql, A >::avatar_id_type_
   query_columns< ::lotso_im::User, id_mysql, A >::
-  avarta_id (A::table_name, "`avarta_id`", 0);
+  avatar_id (A::table_name, "`avatar_id`", 0);
 
   template <typename A>
   struct pointer_query_columns< ::lotso_im::User, id_mysql, A >:
@@ -270,11 +281,11 @@ namespace odb
       unsigned long _phone_size;
       my_bool _phone_null;
 
-      // _avarta_id
+      // _avatar_id
       //
-      details::buffer _avarta_id_value;
-      unsigned long _avarta_id_size;
-      my_bool _avarta_id_null;
+      details::buffer _avatar_id_value;
+      unsigned long _avatar_id_size;
+      my_bool _avatar_id_null;
 
       std::size_t version;
     };

@@ -16,7 +16,7 @@ DEFINE_int32(rpc_timeout, -1, "RPC 调用超时时间");
 DEFINE_int32(rpc_threads, 1, "RPC 的IO线程数量");
 // 服务发现的配置
 DEFINE_string(base_service, "/service", "服务器监控目录");
-DEFINE_string(file_service, "/service/file", "文件管理子服务名称");
+DEFINE_string(file_service, "/service/file_service", "文件管理子服务名称");
 // es的配置
 DEFINE_string(es_host, "http://127.0.0.1:9200/", "ES搜索引擎服务器URL");
 // mysql的配置

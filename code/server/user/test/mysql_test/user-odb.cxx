@@ -134,11 +134,11 @@ namespace odb
       grew = true;
     }
 
-    // _avarta_id
+    // _avatar_id
     //
     if (t[6UL])
     {
-      i._avarta_id_value.capacity (i._avarta_id_size);
+      i._avatar_id_value.capacity (i._avatar_id_size);
       grew = true;
     }
 
@@ -217,14 +217,14 @@ namespace odb
     b[n].is_null = &i._phone_null;
     n++;
 
-    // _avarta_id
+    // _avatar_id
     //
     b[n].buffer_type = MYSQL_TYPE_STRING;
-    b[n].buffer = i._avarta_id_value.data ();
+    b[n].buffer = i._avatar_id_value.data ();
     b[n].buffer_length = static_cast<unsigned long> (
-      i._avarta_id_value.capacity ());
-    b[n].length = &i._avarta_id_size;
-    b[n].is_null = &i._avarta_id_null;
+      i._avatar_id_value.capacity ());
+    b[n].length = &i._avatar_id_size;
+    b[n].is_null = &i._avatar_id_null;
     n++;
   }
 
@@ -371,25 +371,25 @@ namespace odb
       grew = grew || (cap != i._phone_value.capacity ());
     }
 
-    // _avarta_id
+    // _avatar_id
     //
     {
       ::odb::nullable< ::std::basic_string< char > > const& v =
-        o._avarta_id;
+        o._avatar_id;
 
       bool is_null (true);
       std::size_t size (0);
-      std::size_t cap (i._avarta_id_value.capacity ());
+      std::size_t cap (i._avatar_id_value.capacity ());
       mysql::value_traits<
           ::odb::nullable< ::std::basic_string< char > >,
           mysql::id_string >::set_image (
-        i._avarta_id_value,
+        i._avatar_id_value,
         size,
         is_null,
         v);
-      i._avarta_id_null = is_null;
-      i._avarta_id_size = static_cast<unsigned long> (size);
-      grew = grew || (cap != i._avarta_id_value.capacity ());
+      i._avatar_id_null = is_null;
+      i._avatar_id_size = static_cast<unsigned long> (size);
+      grew = grew || (cap != i._avatar_id_value.capacity ());
     }
 
     return grew;
@@ -493,19 +493,19 @@ namespace odb
         i._phone_null);
     }
 
-    // _avarta_id
+    // _avatar_id
     //
     {
       ::odb::nullable< ::std::basic_string< char > >& v =
-        o._avarta_id;
+        o._avatar_id;
 
       mysql::value_traits<
           ::odb::nullable< ::std::basic_string< char > >,
           mysql::id_string >::set_value (
         v,
-        i._avarta_id_value,
-        i._avarta_id_size,
-        i._avarta_id_null);
+        i._avatar_id_value,
+        i._avatar_id_size,
+        i._avatar_id_null);
     }
   }
 
@@ -530,7 +530,7 @@ namespace odb
   "`description`, "
   "`password`, "
   "`phone`, "
-  "`avarta_id`) "
+  "`avatar_id`) "
   "VALUES "
   "(?, ?, ?, ?, ?, ?, ?)";
 
@@ -542,7 +542,7 @@ namespace odb
   "`user`.`description`, "
   "`user`.`password`, "
   "`user`.`phone`, "
-  "`user`.`avarta_id` "
+  "`user`.`avatar_id` "
   "FROM `user` "
   "WHERE `user`.`id`=?";
 
@@ -554,7 +554,7 @@ namespace odb
   "`description`=?, "
   "`password`=?, "
   "`phone`=?, "
-  "`avarta_id`=? "
+  "`avatar_id`=? "
   "WHERE `id`=?";
 
   const char access::object_traits_impl< ::lotso_im::User, id_mysql >::erase_statement[] =
@@ -569,7 +569,7 @@ namespace odb
   "`user`.`description`, "
   "`user`.`password`, "
   "`user`.`phone`, "
-  "`user`.`avarta_id` "
+  "`user`.`avatar_id` "
   "FROM `user`";
 
   const char access::object_traits_impl< ::lotso_im::User, id_mysql >::erase_query_statement[] =

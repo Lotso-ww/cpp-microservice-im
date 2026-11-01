@@ -47,6 +47,7 @@ public:
                         ::lotso_im::UserRegisterRsp* response,
                     ::google::protobuf::Closure* done){
         brpc::ClosureGuard rpc_guard(done);
+        LOG_DEBUG("收到一个用户注册请求!");
         // 0. 定义一个错误处理函数, 当出错的时候进行调用 -- 这里在函数内部实现是因为每个接口的错误返回格式设置是不一样的
         auto err_response = [this, response](const std::string &rid, const std::string &errmsg){
             response->set_request_id(rid);
@@ -79,13 +80,13 @@ public:
         std::string uid = uuid();
         user = std::make_shared<User>(uid, nickname, password);
         ret = _mysql_user->insert(user);
-        if(user) {
+        if(ret == false) {
             LOG_ERROR("{} - MySQL数据库新增数据失败! ", request->request_id());
             return err_response(request->request_id(), "MySQL数据库新增数据失败! ");
         }
         // 6. 向 ES 服务器中新增用户信息
         ret = _es_user->appendData(uid, nickname, "", "", "");
-        if(user) {
+        if(ret == false) {
             LOG_ERROR("{} - ES搜索引擎新增数据失败! ", request->request_id());
             return err_response(request->request_id(), "ES搜索引擎新增数据失败! ");
         }
@@ -98,6 +99,7 @@ public:
                         const ::lotso_im::UserLoginReq* request,
                         ::lotso_im::UserLoginRsp* response,
                         ::google::protobuf::Closure* done){
+        LOG_DEBUG("收到一个用户登录请求!");
         brpc::ClosureGuard rpc_guard(done);
         // 0. 定义一个错误处理函数, 当出错的时候进行调用 -- 这里在函数内部实现是因为每个接口的错误返回格式设置是不一样的
         auto err_response = [this, response](const std::string &rid, const std::string &errmsg){
@@ -111,7 +113,7 @@ public:
         std::string password = request->password();
         // 2. 通过昵称获取用户信息, 进行密码是否一致的判断
         auto user = _mysql_user->select_by_nickname(nickname);
-        if(!user || password != *user->password()) {
+        if(!user || password != user->password()) {
             LOG_ERROR("{} - 用户名或者密码错误 - {}-{}", request->request_id(), nickname, password);
             return err_response(request->request_id(), "用户名或密码错误! ");
         }
@@ -134,6 +136,7 @@ public:
                         const ::lotso_im::PhoneVerifyCodeReq* request,
                         ::lotso_im::PhoneVerifyCodeRsp* response,
                         ::google::protobuf::Closure* done){
+        LOG_DEBUG("收到一个获取手机验证码请求!");
         brpc::ClosureGuard rpc_guard(done);
         // 0. 定义一个错误处理函数, 当出错的时候进行调用 -- 这里在函数内部实现是因为每个接口的错误返回格式设置是不一样的
         auto err_response = [this, response](const std::string &rid, const std::string &errmsg){
@@ -202,13 +205,13 @@ public:
         std::string uid = uuid();
         user = std::make_shared<User>(uid, phone);
         ret = _mysql_user->insert(user);
-        if(user) {
+        if(ret == false) {
             LOG_ERROR("{} - 向数据库添加用户信息失败 - {}! ", request->request_id(), phone);
             return err_response(request->request_id(), "向数据库添加用户信息失败! ");
         }
         // 6. 向 ES 服务器中新增用户信息
         ret = _es_user->appendData(uid, uid, phone, "", "");
-        if(user) {
+        if(ret == false) {
             LOG_ERROR("{} - ES搜索引擎新增数据失败! ", request->request_id());
             return err_response(request->request_id(), "ES搜索引擎新增数据失败! ");
         }
@@ -220,6 +223,7 @@ public:
                         const ::lotso_im::PhoneLoginReq* request,
                         ::lotso_im::PhoneLoginRsp* response,
                         ::google::protobuf::Closure* done){
+        LOG_DEBUG("收到一个手机号登录请求!");
         brpc::ClosureGuard rpc_guard(done);
         // 0. 定义一个错误处理函数, 当出错的时候进行调用 -- 这里在函数内部实现是因为每个接口的错误返回格式设置是不一样的
         auto err_response = [this, response](const std::string &rid, const std::string &errmsg){
@@ -240,7 +244,7 @@ public:
         }
         // 3. 根据手机号从数据库进行用户信息查询，判断用户是否存在
         auto user = _mysql_user->select_by_phone(phone);
-        if(user) {
+        if(!user) {
             LOG_ERROR("{} - 该手机号未注册过用户 - {}! ", request->request_id(), phone);
             return err_response(request->request_id(), "该手机号未注册过用户! ");
         }
@@ -260,6 +264,7 @@ public:
         // 6. 构造会话 ID, 生成会话键值对, 向 redis 中添加会话信息以及登录标记信息
         std::string ssid = uuid();
         _redis_session->append(ssid, user->user_id());
+        _redis_status->append(user->user_id());
         // 7. 组织响应, 返回生成的会话 ID
         response->set_request_id(request->request_id());
         response->set_login_session_id(ssid);
@@ -269,6 +274,7 @@ public:
                         const ::lotso_im::GetUserInfoReq* request,
                         ::lotso_im::GetUserInfoRsp* response,
                         ::google::protobuf::Closure* done){
+        LOG_DEBUG("收到一个用户信息获取请求!");
         brpc::ClosureGuard rpc_guard(done);
         // 0. 定义一个错误处理函数, 当出错的时候进行调用 -- 这里在函数内部实现是因为每个接口的错误返回格式设置是不一样的
         auto err_response = [this, response](const std::string &rid, const std::string &errmsg){
@@ -288,10 +294,10 @@ public:
         // 3. 根据用户信息中的头像 ID, 从文件服务器获取头像文件数据, 组织完整用户信息
         UserInfo *user_info = response->mutable_user_info();
         user_info->set_user_id(user->user_id());
-        if(user->nickname()) user_info->set_nickname(*user->nickname());
-        if(user->description()) user_info->set_description(*user->description());
-        if(user->phone()) user_info->set_phone(*user->phone());
-        if(user->avatar_id()) {
+        user_info->set_nickname(user->nickname());
+        user_info->set_description(user->description());
+        user_info->set_phone(user->phone());
+        if(!user->avatar_id().empty()) {
             // 从信道管理对象中获取到连接了文件管理自服务的 channel
             auto channel = _mm_channels->choose(_file_service_name);
             if(!channel) {
@@ -303,7 +309,7 @@ public:
             lotso_im::GetSingleFileReq req;
             lotso_im::GetSingleFileRsp rsp;
             req.set_request_id(request->request_id());
-            req.set_file_id(*user->avatar_id());
+            req.set_file_id(user->avatar_id());
             brpc::Controller cntl;
             stub.GetSingleFile(&cntl, &req, &rsp, nullptr);
             if(cntl.Failed() == true || rsp.success() == false) {
@@ -320,6 +326,7 @@ public:
                         const ::lotso_im::GetMultiUserInfoReq* request,
                         ::lotso_im::GetMultiUserInfoRsp* response,
                         ::google::protobuf::Closure* done){
+        LOG_DEBUG("收到一个多个用户信息获取请求!");
         brpc::ClosureGuard rpc_guard(done);
         // 0. 定义一个错误处理函数, 当出错的时候进行调用 -- 这里在函数内部实现是因为每个接口的错误返回格式设置是不一样的
         auto err_response = [this, response](const std::string &rid, const std::string &errmsg){
@@ -350,7 +357,8 @@ public:
         lotso_im::GetMultiFileRsp rsp;
         req.set_request_id(request->request_id());
         for(auto &user : users) {
-            req.add_file_id_list(*user.avatar_id());
+            if(user.avatar_id().empty()) continue;
+            req.add_file_id_list(user.avatar_id());
         }
         brpc::Controller cntl;
         stub.GetMultiFile(&cntl, &req, &rsp, nullptr);
@@ -364,10 +372,10 @@ public:
             auto file_map = rsp.mutable_file_data(); // 这是批量文件请求响应中的 map
             UserInfo user_info;
             user_info.set_user_id(user.user_id());
-            if(user.nickname()) user_info.set_nickname(*user.nickname());
-            if(user.description()) user_info.set_description(*user.description());
-            if(user.phone()) user_info.set_phone(*user.phone());
-            if(user.avatar_id()) user_info.set_avatar((*file_map)[*user.avatar_id()].file_content());
+            user_info.set_nickname(user.nickname());
+            user_info.set_description(user.description());
+            user_info.set_phone(user.phone());
+            user_info.set_avatar((*file_map)[user.avatar_id()].file_content());
             (*user_map)[user_info.user_id()] = user_info;
         }
         response->set_request_id(request->request_id());
@@ -377,6 +385,7 @@ public:
                         const ::lotso_im::SetUserAvatarReq* request,
                         ::lotso_im::SetUserAvatarRsp* response,
                         ::google::protobuf::Closure* done){
+        LOG_DEBUG("收到一个用户头像设置请求!");
         brpc::ClosureGuard rpc_guard(done);
         // 0. 定义一个错误处理函数, 当出错的时候进行调用 -- 这里在函数内部实现是因为每个接口的错误返回格式设置是不一样的
         auto err_response = [this, response](const std::string &rid, const std::string &errmsg){
@@ -421,7 +430,7 @@ public:
             return err_response(request->request_id(), "更新数据库用户头像ID失败!");
         }
         // 5. 更新 ES 服务器中用户信息
-        ret = _es_user->appendData(user->user_id(), *user->nickname(), *user->phone(), *user->description(),*user->avatar_id());
+        ret = _es_user->appendData(user->user_id(), user->nickname(), user->phone(), user->description(),user->avatar_id());
         if(ret == false) {
             LOG_ERROR("{} - 更新搜索引擎用户头像ID失败: {}! ", request->request_id(), avatar_id);
             return err_response(request->request_id(), "更新搜索引擎用户头像ID失败!");
@@ -434,6 +443,7 @@ public:
                         const ::lotso_im::SetUserNicknameReq* request,
                         ::lotso_im::SetUserNicknameRsp* response,
                         ::google::protobuf::Closure* done){
+        LOG_DEBUG("收到一个用户昵称设置请求!");
         brpc::ClosureGuard rpc_guard(done);
         // 0. 定义一个错误处理函数, 当出错的时候进行调用 -- 这里在函数内部实现是因为每个接口的错误返回格式设置是不一样的
         auto err_response = [this, response](const std::string &rid, const std::string &errmsg){
@@ -465,7 +475,7 @@ public:
             return err_response(request->request_id(), "更新数据库用户昵称失败!");
         }
         // 5. 更新 ES 服务器中用户信息
-        ret = _es_user->appendData(user->user_id(), *user->nickname(), *user->phone(), *user->description(),*user->avatar_id());
+        ret = _es_user->appendData(user->user_id(), user->nickname(), user->phone(), user->description(),user->avatar_id());
         if(ret == false) {
             LOG_ERROR("{} - 更新搜索引擎用户昵称失败: {}! ", request->request_id(), new_nickname);
             return err_response(request->request_id(), "更新搜索引擎用户昵称失败!");
@@ -478,6 +488,7 @@ public:
                         const ::lotso_im::SetUserDescriptionReq* request,
                         ::lotso_im::SetUserDescriptionRsp* response,
                         ::google::protobuf::Closure* done){
+        LOG_DEBUG("收到一个用户签名设置请求!");
         brpc::ClosureGuard rpc_guard(done);
         // 0. 定义一个错误处理函数, 当出错的时候进行调用 -- 这里在函数内部实现是因为每个接口的错误返回格式设置是不一样的
         auto err_response = [this, response](const std::string &rid, const std::string &errmsg){
@@ -503,7 +514,7 @@ public:
             return err_response(request->request_id(), "更新数据库用户签名失败!");
         }
         // 5. 更新 ES 服务器中用户信息
-        ret = _es_user->appendData(user->user_id(), *user->nickname(), *user->phone(), *user->description(),*user->avatar_id());
+        ret = _es_user->appendData(user->user_id(), user->nickname(), user->phone(), user->description(),user->avatar_id());
         if(ret == false) {
             LOG_ERROR("{} - 更新搜索引擎用户签名失败: {}! ", request->request_id(), new_description);
             return err_response(request->request_id(), "更新搜索引擎用户签名失败!");
@@ -516,6 +527,7 @@ public:
                         const ::lotso_im::SetUserPhoneNumberReq* request,
                         ::lotso_im::SetUserPhoneNumberRsp* response,
                         ::google::protobuf::Closure* done){
+        LOG_DEBUG("收到一个用户手机号设置请求!");
         brpc::ClosureGuard rpc_guard(done);
         // 0. 定义一个错误处理函数, 当出错的时候进行调用 -- 这里在函数内部实现是因为每个接口的错误返回格式设置是不一样的
         auto err_response = [this, response](const std::string &rid, const std::string &errmsg){
@@ -555,7 +567,7 @@ public:
             return err_response(request->request_id(), "更新数据库用户手机号失败!");
         }
         // 5. 更新 ES 服务器中用户信息
-        ret = _es_user->appendData(user->user_id(), *user->nickname(), *user->phone(), *user->description(),*user->avatar_id());
+        ret = _es_user->appendData(user->user_id(), user->nickname(), user->phone(), user->description(),user->avatar_id());
         if(ret == false) {
             LOG_ERROR("{} - 更新搜索引擎用户手机号失败: {}! ", request->request_id(), new_phone);
             return err_response(request->request_id(), "更新搜索引擎用户手机号失败!");
@@ -575,10 +587,10 @@ private:
         }
         for(int i = 0; i < password.size(); i++)
         {
-            if(!((password[i] > 'a' && password[i] < 'z') ||
-                (password[i] > 'A' && password[i] < 'Z') ||
-                (password[i] > '0' && password[i] < '9') ||
-                (password[i] == '_' && password[i] < '-')
+            if(!((password[i] >= 'a' && password[i] <= 'z') ||
+                (password[i] >= 'A' && password[i] <= 'Z') ||
+                (password[i] >= '0' && password[i] <= '9') ||
+                (password[i] == '_' || password[i] == '-')
             )) {
                 LOG_ERROR("密码字符不合法: {}", password);
                 return false;
@@ -587,6 +599,7 @@ private:
         return true;
     }
     bool phone_check(const std::string &phone) {
+        if(phone.size() != 11) return false;
         if(phone.size() < 1) return false;
         if(phone[0] != '1') return false;
         if(phone[1] < '3' || phone[1] > '9') return false;

@@ -2,8 +2,8 @@
  * compiler for C++.
  */
 
-Use `my_im`;
-DROP TABLE IF EXISTS `user`;
+Use my_im;
+DROP TABLE IF EXISTS user;
 
 CREATE TABLE `user` (
   `id` BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
@@ -12,7 +12,7 @@ CREATE TABLE `user` (
   `description` TEXT NULL,
   `password` varchar(64) NULL,
   `phone` varchar(64) NULL,
-  `avarta_id` varchar(64) NULL)
+  `avatar_id` varchar(64) NULL)
  ENGINE=InnoDB;
 
 CREATE UNIQUE INDEX `user_id_i`
