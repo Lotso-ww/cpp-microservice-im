@@ -1,0 +1,1 @@
+../transmite/test/mysql_test/chat_session_member-odb.hxx
