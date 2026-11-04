@@ -43,7 +43,7 @@ void select_users(lotso_im::UserTable &user_tb)
     auto res = user_tb.select_multi_users(id_list);
     for(auto user : res)
     {
-        if(user.nickname()) std::cout << *user.nickname() << std::endl; 
+        std::cout << user.nickname() << std::endl; 
     }
 }
 
