@@ -53,3 +53,9 @@ code/server/proto/gen/
 .trae/
 .vscode/
 .clangd
+
+# 本地服务运行产物（pid / 日志）
+.runtime/
+
+# 本地开发脚本（一键启停，个人环境专用）
+scripts/
