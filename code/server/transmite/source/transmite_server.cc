@@ -28,6 +28,9 @@ DEFINE_int32(mysql_pool_count, 4, "mysql连接池最大连接数量");
 DEFINE_string(mq_user, "lotso", "mq服务器访问用户名");
 DEFINE_string(mq_pwd, "123456", "mq服务器访问密码");
 DEFINE_string(mq_host, "127.0.0.1:5672", "mq服务器访问地址");
+DEFINE_string(mq_msg_exchange, "msg_exchange", "持久化消息的发布交换机名称");
+DEFINE_string(mq_msg_queue, "msg_queue", "持久化消息的发布队列名称");
+DEFINE_string(mq_msg_binding_key, "msg_binding_key", "持久化消息的routing_key");
 
 int main(int argc, char *argv[])
 {
@@ -39,13 +42,13 @@ int main(int argc, char *argv[])
     // logging::InitLogging(settings);
 
     lotso_im::TransmiteServerBuilder tsb;
-    tsb.make_mq_object(FLAGS_mq_user, FLAGS_mq_pwd, FLAGS_mq_host);
+    tsb.make_mq_object(FLAGS_mq_user, FLAGS_mq_pwd, FLAGS_mq_host, FLAGS_mq_msg_exchange, FLAGS_mq_msg_queue, FLAGS_mq_msg_binding_key);
     tsb.make_mysql_object(FLAGS_mysql_user, FLAGS_mysql_pwd, FLAGS_mysql_host, FLAGS_mysql_db, FLAGS_mysql_cset, FLAGS_mysql_port, FLAGS_mysql_pool_count);
     tsb.make_discovery_object(FLAGS_registry_host, FLAGS_base_service, FLAGS_file_service);
     // 先 rpc调用再服务注册
     tsb.make_rpc_object(FLAGS_listen_port, FLAGS_rpc_timeout, FLAGS_rpc_threads);
     tsb.make_registry_object(FLAGS_registry_host, FLAGS_base_service + FLAGS_instance_name, FLAGS_access_host);
-    
+
     auto server = tsb.build();
     server->start();
     return 0;

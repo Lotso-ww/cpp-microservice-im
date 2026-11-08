@@ -29,18 +29,68 @@ class TransmiteServiceImpl : public lotso_im::MsgTransmitService
 {
 public:
     TransmiteServiceImpl(const std::string &user_service_name, const ServiceManager::ptr &channels, const std::shared_ptr<odb::core::database> &mysql_client
-                        ,const MQClient::ptr &mq_client)
+                        ,const std::string &exchange_name, const MQClient::ptr &mq_client)
                     : _user_service_name(user_service_name)
                     , _mm_channels(channels)
                     , _mysql_session_member_table(std::make_shared<ChatSessionMemberTable>(mysql_client))
+                    , _exchange_name(exchange_name)
                     , _mq_client(mq_client)
     {}
    ~TransmiteServiceImpl(){}
     virtual void GetTransmitTarget(::google::protobuf::RpcController* controller,
                         const ::lotso_im::NewMessageReq* request,
-                        ::lotso_im::NewMessageRsp* response,
+                        ::lotso_im::GetTransmitTargetRsp* response,
                     ::google::protobuf::Closure* done){
         brpc::ClosureGuard rpc_guard(done);
+        // 0. 定义一个错误处理函数, 当出错的时候进行调用
+        auto err_response = [this, response](const std::string &rid, const std::string &errmsg){
+            response->set_request_id(rid);
+            response->set_success(false);
+            response->set_errmsg(errmsg);
+            return;
+        }; 
+        // 1. 从请求中获取关键信息：用户ID，聊天会话ID，消息内容
+        std::string uid = request->user_id();
+        std::string chat_ssid = request->session_id();
+        const MessageContent &content = request->message();
+        // 2. 进行消息组织：发送者-用户子服务获取信息，所属会话，消息内容，产生时间，消息ID
+        auto channel = _mm_channels->choose(_user_service_name);
+        if(!channel) {
+            LOG_ERROR("{}-{} 没有可提供的用户子服务节点! ", request->request_id(), _user_service_name);
+            return err_response(request->request_id(), "没有可提供的用户子服务节点!");
+        }
+        UserService_Stub stub(channel.get());
+        GetUserInfoReq req;
+        GetUserInfoRsp rsp;
+        req.set_request_id(request->request_id());
+        req.set_user_id(uid);
+        brpc::Controller cntl;
+        stub.GetUserInfo(&cntl, &req, &rsp, nullptr);
+        if(cntl.Failed() == true || rsp.success() == false) {
+                LOG_ERROR("{} - 用户子服务调用失败 - {}", request->request_id(), cntl.ErrorText());
+                return err_response(request->request_id(), "用户子服务调用失败!");
+        }
+        MessageInfo message;
+        message.set_message_id(uuid());
+        message.set_chat_session_id(chat_ssid);
+        message.set_timestamp(time(nullptr));
+        message.mutable_sender()->CopyFrom(rsp.user_info());
+        message.mutable_message()->CopyFrom(content);
+        // 3. 获取消息转发客户端用户列表
+        auto target_list = _mysql_session_member_table->members(chat_ssid);
+        // 4. 将封装完毕的消息，发布到消息队列，待消息存储子服务进行消息持久化
+        bool ret = _mq_client->publish(_exchange_name, message.SerializeAsString());
+        if(ret == false) {
+            LOG_ERROR("{} - 持久化消息发布失败: {}", request->request_id(), cntl.ErrorText());
+            return err_response(request->request_id(), "持久化消息发布失败!");
+        }
+        // 5. 组织响应
+        response->set_request_id(request->request_id());
+        response->set_success(true);
+        response->mutable_message()->CopyFrom(message);
+        for(const auto &id : target_list) {
+            response->add_target_id_list(id);
+        }
     }
 private:
     // 用户子服务调用相关信息
@@ -51,6 +101,7 @@ private:
     ChatSessionMemberTable::ptr _mysql_session_member_table;
 
     // 消息队列客户端句柄
+    std::string _exchange_name;
     MQClient::ptr _mq_client;
 };
 
@@ -85,9 +136,11 @@ class TransmiteServerBuilder
 {
 public: 
     // 构成mq管理对象
-    void make_mq_object(const std::string &user, std::string &pswd, std::string &host)
+    void make_mq_object(const std::string &user, std::string &pswd, std::string &host
+                     , const std::string &exchange_name, const std::string &queue_name, const std::string &binding_key)
     {
         _mq_client = std::make_shared<MQClient>(user, pswd, host);
+        _mq_client->declareComponents(exchange_name, queue_name, binding_key);
     }
     // 构造mysql管理对象
     void make_mysql_object(const std::string &user, std::string &pswd, std::string &host, std::string &db, std::string &cset, int port, int conn_pool_count)
@@ -129,7 +182,7 @@ public:
             abort();
         }
         _rpc_server = std::make_shared<brpc::Server>();
-        TransmiteServiceImpl *transmite_service = new TransmiteServiceImpl(_user_service_name, _mm_channels, _mysql_client, _mq_client);
+        TransmiteServiceImpl *transmite_service = new TransmiteServiceImpl(_user_service_name, _mm_channels, _mysql_client, _exchange_name, _mq_client);
         int ret = _rpc_server->AddService(transmite_service, brpc::ServiceOwnership::SERVER_OWNS_SERVICE);  // brpc::ServiceOwnership::SERVER_OWNS_SERVICE -- 添加服务失败时, 服务器将负责删除服务对象
         if(ret == -1)
         {
@@ -173,6 +226,7 @@ private:
     std::string _user_service_name;
     ServiceManager::ptr _mm_channels;
     Discovery::ptr _service_discover;
+    std::string _exchange_name;
     MQClient::ptr _mq_client;
     std::shared_ptr<brpc::Server> _rpc_server;
 };
