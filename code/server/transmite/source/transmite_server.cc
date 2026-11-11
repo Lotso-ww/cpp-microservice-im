@@ -30,7 +30,7 @@ DEFINE_string(mq_pwd, "123456", "mq服务器访问密码");
 DEFINE_string(mq_host, "127.0.0.1:5672", "mq服务器访问地址");
 DEFINE_string(mq_msg_exchange, "msg_exchange", "持久化消息的发布交换机名称");
 DEFINE_string(mq_msg_queue, "msg_queue", "持久化消息的发布队列名称");
-DEFINE_string(mq_msg_binding_key, "msg_binding_key", "持久化消息的routing_key");
+DEFINE_string(mq_msg_binding_key, "msg_queue", "持久化消息的routing_key");
 
 int main(int argc, char *argv[])
 {

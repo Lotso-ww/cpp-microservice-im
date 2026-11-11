@@ -73,11 +73,11 @@ target_link_libraries(${target} -lgflags -lspdlog
 )
 
 # 测试
-# set(test_client "transmite_client")
-# set(test_files "")
-# aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/test test_files)
-# add_executable(${test_client} ${test_files} ${proto_srcs})
-# target_link_libraries(${test_client} -lgtest -lgflags -lspdlog -lfmt -lbrpc -lssl -lcrypto -lprotobuf -lleveldb -letcd-cpp-api -lcpprest -lcurl /usr/local/lib/libjsoncpp.so.19)
+set(test_client "transmite_client")
+set(test_files "")
+aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/test test_files)
+add_executable(${test_client} ${test_files} ${proto_srcs})
+target_link_libraries(${test_client} -lgtest -lgflags -lspdlog -lfmt -lbrpc -lssl -lcrypto -lprotobuf -lleveldb -letcd-cpp-api -lcpprest -lcurl /usr/local/lib/libjsoncpp.so.19)
 
 # 6. 设置头文件默认搜索路径
 include_directories(${CMAKE_CURRENT_BINARY_DIR})

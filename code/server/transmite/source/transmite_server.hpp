@@ -51,7 +51,7 @@ public:
         }; 
         // 1. 从请求中获取关键信息：用户ID，聊天会话ID，消息内容
         std::string uid = request->user_id();
-        std::string chat_ssid = request->session_id();
+        std::string chat_ssid = request->chat_session_id();
         const MessageContent &content = request->message();
         // 2. 进行消息组织：发送者-用户子服务获取信息，所属会话，消息内容，产生时间，消息ID
         auto channel = _mm_channels->choose(_user_service_name);

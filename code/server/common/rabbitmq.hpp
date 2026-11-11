@@ -45,6 +45,8 @@ public:
     }
     void declareComponents(const std::string &exchange, const std::string &queue, const std::string &routing_key = "routing_key", int32_t exchange_type = AMQP::ExchangeType::direct)
     {
+        // 记住绑定使用的路由键, publish 时默认复用它, 避免两处各写一个默认值导致静默丢消息
+        _routing_key = routing_key;
         _channel->declareExchange(exchange, (AMQP::ExchangeType)exchange_type)
             .onError([](const char *message)
             {
@@ -79,9 +81,10 @@ public:
             });
     }
 
-    bool publish(const std::string &exchange, const std::string &msg, const std::string &routing_key = "routing_key")
+    bool publish(const std::string &exchange, const std::string &msg, const std::string &routing_key = std::string())
     {
-        bool ret = _channel->publish(exchange, routing_key, msg);
+        const std::string &key = routing_key.empty() ? _routing_key : routing_key;
+        bool ret = _channel->publish(exchange, key, msg);
         if(ret == false)
         {
             LOG_ERROR("{} 发布消息失败: ", exchange);
@@ -115,6 +118,7 @@ private:
     std::unique_ptr<AMQP::TcpConnection> _connection;
     std::unique_ptr<AMQP::TcpChannel> _channel;
     std::thread _loop_thread;
+    std::string _routing_key = "routing_key"; // 由 declareComponents 设置, publish 默认使用
 };
 
 } // namespace lotso_im
