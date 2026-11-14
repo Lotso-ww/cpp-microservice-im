@@ -1,4 +1,5 @@
-#include "../../../common/data_mysql.hpp"
+#include "../../../common/mysql_factory.hpp"
+#include "../../../common/mysql_chat_session_member.hpp"
 #include "../../../odb/chat_session_member.hxx"
 #include "user-odb.hxx"
 #include <memory>

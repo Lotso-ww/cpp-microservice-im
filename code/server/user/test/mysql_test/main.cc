@@ -1,4 +1,5 @@
-#include "../../../common/data_mysql.hpp"
+#include "../../../common/mysql_factory.hpp"
+#include "../../../common/mysql_user.hpp"
 #include "../../../odb/user.hxx"
 #include "user-odb.hxx"
 #include <memory>

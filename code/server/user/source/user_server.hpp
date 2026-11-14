@@ -15,7 +15,8 @@
 #include "dms.hpp"        // 短信平台模块封装
 #include "etcd.hpp"       // 服务注册模块封装
 #include "data_es.hpp"    // es 数据管理客户端封装
-#include "data_mysql.hpp"    // mysql 数据管理客户端封装
+#include "mysql_factory.hpp"    // mysql 连接工厂封装
+#include "mysql_user.hpp"    // mysql 用户表管理封装
 #include "data_redis.hpp"    // redis 数据管理客户端封装
 #include "logger.hpp"     // 日志模块封装
 #include "utils.hpp"      // 基础工具接口
