@@ -12,47 +12,47 @@ class Message
 {
 public:
     Message(){}
-    Message(const std::string &mid, const std::string &ssid, const std::string &uid, unsigned char mtype, boost::posix_time::ptime &ctime)
+    Message(const std::string &mid, const std::string &ssid, const std::string &uid, const unsigned char mtype, const boost::posix_time::ptime &ctime)
         : _message_id(mid)
         , _session_id(ssid)
         , _user_id(uid)
         , _message_type(mtype)
         , _create_time(ctime) {}
 
-    std::string message_id() { return _message_id; }
+    std::string message_id() const { return _message_id; }
     void message_id(const std::string &val) { _message_id = val; }
 
-    std::string session_id() { return _session_id; }
+    std::string session_id() const { return _session_id; }
     void session_id(const std::string &val) { _session_id = val; }
 
-    std::string user_id() { return _user_id; }
+    std::string user_id() const { return _user_id; }
     void user_id(const std::string &val) { _user_id = val; }
 
-    unsigned char message_type() { return _message_type; }
+    unsigned char message_type() const { return _message_type; }
     void message_type(unsigned char val) { _message_type = val; }
 
-    boost::posix_time::ptime create_time() { return _create_time; }
+    boost::posix_time::ptime create_time() const { return _create_time; }
     void create_time(boost::posix_time::ptime &val) { _create_time = val; }
 
-    std::string content() {
+    std::string content() const {
         if(!_content) return std::string();
         return *_content;
     }
     void content(const std::string &val) { _content = val; }
 
-    std::string file_id() {
+    std::string file_id() const {
         if(!_file_id) return std::string();
         return *_file_id;
     }
     void file_id(const std::string &val) { _file_id = val; }
 
-    std::string file_name() {
+    std::string file_name() const {
         if(!_file_name) return std::string();
         return *_file_name;
     }
     void file_name(const std::string &val) { _file_name = val; }
 
-    unsigned int file_size() {
+    unsigned int file_size() const {
         if(!_file_size) return 0;
         return *_file_size;
     }
