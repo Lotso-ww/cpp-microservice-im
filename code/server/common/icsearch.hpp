@@ -125,8 +125,8 @@ public:
         : _client(client)
         , _name(name)
         , _type(type){}
-    // 针对这个项目我们只需要使用字符串类型即可, 如果需要使用其他类型的话, 就需要进行重载
-    ESInsert& append(const std::string &key, const std::string &val)
+    template<typename T>
+    ESInsert& append(const std::string &key, const T &val)
     {
         _item[key] = val;
         return *this;
@@ -228,11 +228,32 @@ public:
         _should.append(match);
         return *this;
     }
+    // 必须包含 -- term -- 精确匹配,不分词
+    ESSearch& append_must_term(const std::string &key, const std::string& val)
+    {
+        Json::Value field;
+        field[key] = val;
+        Json::Value term;
+        term["term"] = field;
+        _must.append(term);
+        return *this;
+    }
+    // 必须包含 -- match -- 分词匹配, 不用精确
+    ESSearch& append_must_match(const std::string &key, const std::string& val)
+    {
+        Json::Value field;
+        field[key] = val;
+        Json::Value match;
+        match["match"] = field;
+        _must.append(match);
+        return *this;
+    }
     Json::Value search()
     {
         Json::Value cond;
         if(!_must_not.empty()) cond["must_not"] = _must_not;
         if(!_should.empty()) cond["should"] = _should;
+        if(!_must.empty()) cond["must"] = _must;
         Json::Value query;
         query["bool"] = cond;
         Json::Value root;
@@ -274,6 +295,7 @@ private:
     std::string _name;
     std::string _type;
     Json::Value _must_not;
+    Json::Value _must;
     Json::Value _should;
     std::shared_ptr<elasticlient::Client> _client;
 };

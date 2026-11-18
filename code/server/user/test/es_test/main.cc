@@ -30,10 +30,10 @@ int main(int argc, char *argv[])
     {
         std::cout << "--------------------------------" << std::endl;
         std::cout << u.user_id() << std::endl;
-        std::cout << *u.nickname() << std::endl;
-        std::cout << *u.phone() << std::endl;
-        std::cout << *u.description() << std::endl;
-        std::cout << *u.avatar_id() << std::endl;
+        std::cout << u.nickname() << std::endl;
+        std::cout << u.phone() << std::endl;
+        std::cout << u.description() << std::endl;
+        std::cout << u.avatar_id() << std::endl;
     }
     return 0;
 }
