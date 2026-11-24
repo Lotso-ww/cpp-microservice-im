@@ -32,7 +32,7 @@ public:
     void message_type(unsigned char val) { _message_type = val; }
 
     boost::posix_time::ptime create_time() const { return _create_time; }
-    void create_time(boost::posix_time::ptime &val) { _create_time = val; }
+    void create_time(const boost::posix_time::ptime &val) { _create_time = val; }
 
     std::string content() const {
         if(!_content) return std::string();

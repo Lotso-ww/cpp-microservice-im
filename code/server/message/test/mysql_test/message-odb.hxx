@@ -60,7 +60,7 @@ namespace odb
   {
     public:
     typedef ::lotso_im::Message object_type;
-    typedef ::lotso_im::Message* pointer_type;
+    typedef ::std::shared_ptr< ::lotso_im::Message > pointer_type;
     typedef odb::pointer_traits<pointer_type> pointer_traits;
 
     static const bool polymorphic = false;
