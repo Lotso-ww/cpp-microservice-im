@@ -1,8 +1,10 @@
 //实现用户管理子服务
+#include <boost/date_time/posix_time/conversion.hpp>
 #include <brpc/controller.h>
 #include <brpc/server.h>
 #include <butil/logging.h>
 #include <brpc/closure_guard.h>
+#include <cstdint>
 #include <cstdlib>
 #include <elasticlient/client.h>
 #include <functional>
@@ -15,6 +17,7 @@
 #include "dms.hpp"        // 短信平台模块封装
 #include "etcd.hpp"       // 服务注册模块封装
 #include "data_es.hpp"    // es 数据管理客户端封装
+#include "message.hxx"
 #include "mysql_factory.hpp"    // mysql 连接工厂封装
 #include "mysql_message.hpp"    // mysql 消息表管理封装
 #include "rabbitmq.hpp"   // mq 消息队列客户端封装
@@ -81,7 +84,99 @@ public:
     // MQ 消息消费回调, 由 MessageServerBuilder 在订阅队列时绑定, 因此必须是 public
     void onMessage(const char *body, size_t sz)
     {
-
+        // 1. 取出序列化的消息内容，进行反序列化
+        lotso_im::MessageInfo message;
+        bool ret = message.ParseFromArray(body, sz);
+        if(ret == false) {
+            LOG_ERROR("对消费的数据进行反序列化失败! ");
+        }
+        // 2. 根据不同的消息类型进行不同的处理
+        std::string file_id, file_name, content;
+        int64_t file_size;
+        switch (message.message().message_type()) {
+            // 如果是一个文本类型消息，取元信息存储到 ES
+            case MessageType::STRING:
+            {
+                const auto &msg = message.message().string_message();
+                content = msg.content();
+                ret = _es_user->appendData(message.sender().user_id(),message.message_id(), message.timestamp(), message.chat_session_id(), content);
+                if(ret == false) {
+                    LOG_ERROR("文本消息向存储引擎进行存储失败! ");
+                    return;
+                }
+            }
+            break;
+            // 如果是一个图片/语音/文件消息，则取出数据存储到文件子服务中，并获取文件ID
+            case MessageType::IMAGE:
+            {
+                const auto &msg = message.message().image_message();
+                ret = _PutFile("", msg.image_content(), msg.image_content().size(), file_id);
+                if(ret == false) {
+                    LOG_ERROR("上传图片到文件子服务失败! ");
+                    return;
+                }
+                break;
+            }
+            case MessageType::FILE:
+            {
+                const auto &msg = message.message().file_message();
+                file_name = msg.file_name();
+                file_size = msg.file_size();
+                ret = _PutFile(file_name, msg.file_contents(), file_size, file_id);
+                if(ret == false) {
+                    LOG_ERROR("上传文件到文件子服务失败! ");
+                    return;
+                }
+                break;
+            }
+            case MessageType::SPEECH:
+            {
+                const auto &msg = message.message().speech_message();
+                ret = _PutFile("", msg.file_contents(), msg.file_contents().size(), file_id);
+                if(ret == false) {
+                    LOG_ERROR("上传语音到文件子服务失败! ");
+                    return;
+                }
+                break;
+            }
+            default:
+                LOG_ERROR("消息类型错误! ");
+                return;
+        }
+        // 3. 提取消息的元信息，存储到mysql数据库中
+        lotso_im::Message msg(message.message_id(), message.chat_session_id(), message.sender().user_id(), message.message().message_type(), boost::posix_time::from_time_t(message.timestamp()));
+        msg.content(content);
+        msg.file_id(file_id);
+        msg.file_size(file_size);
+        ret = _mysql_message->insert(msg);
+        if(ret == false) {
+            LOG_ERROR("向数据库插入数据失败! ");
+            return;
+        }
+    }
+private:
+    bool _PutFile(const std::string &filename, const std::string &body, const int64_t fsize, std::string &file_id)
+    {
+        // 实现文件的上传
+        auto channel = _mm_channels->choose(_file_service_name);
+        if(!channel) {
+            LOG_ERROR("{} 没有可以访问的文件子服务节点! ", _file_service_name);
+            return false;
+        }
+        FileService_Stub stub(channel.get());
+        PutSingleFileReq req;
+        PutSingleFileRsp rsp;
+        req.mutable_file_data()->set_file_name(filename);
+        req.mutable_file_data()->set_file_size(fsize);
+        req.mutable_file_data()->set_file_content(body);
+        brpc::Controller cntl;
+        stub.PutSingleFile(&cntl, &req, &rsp, nullptr);
+        if(cntl.Failed() == true || rsp.success() == false) {
+            LOG_ERROR("文件子服务调用失败 - {}", cntl.ErrorText());
+            return false;
+        }
+        file_id = rsp.file_info().file_id();
+        return true;
     }
 private:
     ESMessage::ptr _es_user;
