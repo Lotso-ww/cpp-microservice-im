@@ -89,6 +89,7 @@ public:
         bool ret = message.ParseFromArray(body, sz);
         if(ret == false) {
             LOG_ERROR("对消费的数据进行反序列化失败! ");
+            return;
         }
         // 2. 根据不同的消息类型进行不同的处理
         std::string file_id, file_name, content;
