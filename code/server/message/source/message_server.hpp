@@ -1,5 +1,6 @@
 //实现用户管理子服务
 #include <boost/date_time/posix_time/conversion.hpp>
+#include <boost/date_time/posix_time/ptime.hpp>
 #include <brpc/controller.h>
 #include <brpc/server.h>
 #include <butil/logging.h>
@@ -12,6 +13,7 @@
 #include <memory>
 #include <odb/forward.hxx>
 #include <string>
+#include <unordered_map>
 #include <vector>
 #include "channel.hpp"    // 信道管理模块封装
 #include "dms.hpp"        // 短信平台模块封装
@@ -27,6 +29,7 @@
 #include "base.pb.h"    // protobuf 框架代码
 #include "message.pb.h"    // protobuf 框架代码
 #include "file.pb.h"    // protobuf 框架代码
+#include "user.pb.h"    // protobuf 框架代码
 
 namespace lotso_im {
 // 创建子类，继承于 MessageService 创建一个子类，并实现 rpc 调用的业务功能
@@ -34,11 +37,12 @@ class MessageServiceImpl : public lotso_im::MsgStorageService
 {
 public:
     MessageServiceImpl(const std::shared_ptr<elasticlient::Client> &es_client, const std::shared_ptr<odb::core::database> &mysql_client, 
-                    const ServiceManager::ptr &mm_channels, const std::string &file_service_name)
+                    const ServiceManager::ptr &mm_channels, const std::string &file_service_name, const std::string &user_service_name)
                     : _es_user(std::make_shared<ESMessage>(es_client))
                     , _mysql_message(std::make_shared<MessageTable>(mysql_client))
                     , _mm_channels(mm_channels)
                     , _file_service_name(file_service_name)
+                    ,_user_service_name(user_service_name)
     {}
    ~MessageServiceImpl(){}
     virtual void GetHistoryMsg(::google::protobuf::RpcController* controller,
@@ -53,6 +57,73 @@ public:
             response->set_errmsg(errmsg);
             return;
         };
+        // 1. 获取信息
+        std::string rid = request->request_id();
+        std::string csid = request->chat_session_id();
+        boost::posix_time::ptime stime = boost::posix_time::from_time_t(request->start_time());
+        boost::posix_time::ptime etime = boost::posix_time::from_time_t(request->over_time());
+        // 2. 从数据库获取消息, 我们之前消息消费回调的时候最后都是进了数据库
+        auto msg_lists = _mysql_message->range(csid, stime, etime);
+        // 3. 统计所有文件类型的消息ID, 从文件子服务进行批量下载
+        std::vector<std::string> file_id_lists;
+        for(auto &msg : msg_lists) {
+            if(msg.file_id().empty()) continue; // 不是文件的直接跳过
+            file_id_lists.push_back(msg.file_id());
+        }
+        std::unordered_map<std::string, std::string> file_data_lists;
+        auto ret = _GetFile(rid, file_id_lists, file_data_lists);
+        if(ret == false) {
+            LOG_ERROR("{} 批量文件数据下载失败! ", rid);
+            return err_response(rid, "批量文件数据下载失败!");
+        }
+        // 4. 统计所有用户ID, 从用户子服务批量获取用户信息
+        std::vector<std::string> user_id_lists;
+        for(auto &msg : msg_lists) {
+            user_id_lists.push_back(msg.user_id());
+        }
+        std::unordered_map<std::string, UserInfo> user_data_lists;
+        ret = _GetUser(rid, user_id_lists, user_data_lists);
+        if(ret == false) {
+            LOG_ERROR("{} 批量用户数据获取失败! ", rid);
+            return err_response(rid, "批量用户数据获取失败!");
+        }
+        // 5. 组织响应
+        response->set_request_id(rid);
+        response->set_success(true);
+        for(auto &msg : msg_lists) {
+            auto message_info = response->add_msg_list();
+            message_info->set_message_id(msg.message_id());
+            message_info->set_chat_session_id(msg.session_id());
+            message_info->set_timestamp(boost::posix_time::to_time_t(msg.create_time()));
+            message_info->mutable_sender()->CopyFrom(user_data_lists[msg.user_id()]);
+            auto message_content = message_info->mutable_message();
+            switch (message_content->message_type()) {
+                case MessageType::STRING:
+                    message_content->set_message_type(MessageType::STRING);
+                    message_content->mutable_string_message()->set_content(msg.content()); // 这个是数据库直接有内容, 其他几种是没有的
+                    break;
+                case MessageType::IMAGE:
+                    message_content->set_message_type(MessageType::IMAGE);
+                    message_content->mutable_image_message()->set_file_id(msg.file_id());
+                    message_content->mutable_image_message()->set_image_content(file_data_lists[msg.file_id()]); 
+                    break;
+                case MessageType::FILE:
+                    message_content->set_message_type(MessageType::FILE);
+                    message_content->mutable_file_message()->set_file_id(msg.file_id());
+                    message_content->mutable_file_message()->set_file_size(msg.file_size());
+                    message_content->mutable_file_message()->set_file_name(msg.file_name());
+                    message_content->mutable_file_message()->set_file_contents(file_data_lists[msg.file_id()]);
+                    break;
+                case MessageType::SPEECH:  
+                    message_content->set_message_type(MessageType::SPEECH);
+                    message_content->mutable_speech_message()->set_file_id(msg.file_id());
+                    message_content->mutable_speech_message()->set_file_contents(file_data_lists[msg.file_id()]);  // 这个感觉是命名的问题, 命名的也是 set_file_contents
+                    break;
+                default:
+                    break;
+            }
+        }
+        return;
     }
   virtual void GetRecentMsg(::google::protobuf::RpcController* controller,
                        const ::lotso_im::GetRecentMsgReq* request,
@@ -156,6 +227,62 @@ public:
         }
     }
 private:
+    bool _GetUser(const std::string &rid, const std::vector<std::string> &user_id_lists, std::unordered_map<std::string, UserInfo> &user_data_list)
+    {
+        // 实现用户的获取
+        auto channel = _mm_channels->choose(_user_service_name);
+        if(!channel) {
+            LOG_ERROR("{} 没有可以访问的用户子服务节点! ", _user_service_name);
+            return false;
+        }
+        UserService_Stub stub(channel.get());
+        GetMultiUserInfoReq req;
+        GetMultiUserInfoRsp rsp;
+        req.set_request_id(rid);
+        for(auto &user_id : user_id_lists) {
+            req.add_users_id(user_id);
+        }
+        brpc::Controller cntl;
+        stub.GetMultiUserInfo(&cntl, &req, &rsp, nullptr);
+        if(cntl.Failed() == true || rsp.success() == false) {
+            LOG_ERROR("文件子服务调用失败 - {}", cntl.ErrorText());
+            return false;
+        }
+        const auto &umap = rsp.users_info();
+        for(auto it = umap.begin(); it != umap.end(); ++it) {
+            // 添加到我们的map中去
+            user_data_list.insert({it->first, it->second});
+        }
+        return true;
+    }
+    bool _GetFile(const std::string &rid, const std::vector<std::string> &file_id_lists, std::unordered_map<std::string, std::string> &file_data_lists)
+    {
+        // 实现文件的获取
+        auto channel = _mm_channels->choose(_file_service_name);
+        if(!channel) {
+            LOG_ERROR("{} 没有可以访问的文件子服务节点! ", _file_service_name);
+            return false;
+        }
+        FileService_Stub stub(channel.get());
+        GetMultiFileReq req;
+        GetMultiFileRsp rsp;
+        req.set_request_id(rid);
+        for(auto &file_id : file_id_lists) {
+            req.add_file_id_list(file_id);
+        }
+        brpc::Controller cntl;
+        stub.GetMultiFile(&cntl, &req, &rsp, nullptr);
+        if(cntl.Failed() == true || rsp.success() == false) {
+            LOG_ERROR("文件子服务调用失败 - {}", cntl.ErrorText());
+            return false;
+        }
+        const auto &fmap = rsp.file_data();
+        for(auto it = fmap.begin(); it != fmap.end(); ++it) {
+            // 添加到我们的map中去
+            file_data_lists.insert({it->first, it->second.file_content()});
+        }
+        return true;
+    }
     bool _PutFile(const std::string &filename, const std::string &body, const int64_t fsize, std::string &file_id)
     {
         // 实现文件的上传
@@ -184,6 +311,7 @@ private:
     MessageTable::ptr _mysql_message;
     // 这边是 rpc 调用客户端相关对象
     std::string _file_service_name;
+    std::string _user_service_name;
     ServiceManager::ptr _mm_channels;
 };
 
@@ -288,7 +416,7 @@ public:
             abort();
         }
         _rpc_server = std::make_shared<brpc::Server>();
-        MessageServiceImpl *message_service = new MessageServiceImpl(_es_client, _mysql_client, _mm_channels, _file_service_name);
+        MessageServiceImpl *message_service = new MessageServiceImpl(_es_client, _mysql_client, _mm_channels, _file_service_name, _user_service_name);
         int ret = _rpc_server->AddService(message_service, brpc::ServiceOwnership::SERVER_OWNS_SERVICE);  // brpc::ServiceOwnership::SERVER_OWNS_SERVICE -- 添加服务失败时, 服务器将负责删除服务对象
         if(ret == -1)
         {
@@ -337,6 +465,7 @@ private:
     std::shared_ptr<sw::redis::Redis> _redis_client;
 
     std::string _file_service_name;
+    std::string _user_service_name;
     ServiceManager::ptr _mm_channels;
     Discovery::ptr _service_discover;
     DMSClient::ptr _dms_client;
