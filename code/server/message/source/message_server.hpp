@@ -120,6 +120,7 @@ public:
                     message_content->mutable_speech_message()->set_file_contents(file_data_lists[msg.file_id()]);  // 这个感觉是命名的问题, 命名的也是 set_file_contents
                     break;
                 default:
+                    LOG_ERROR("消息类型不存在! ");
                     break;
             }
         }
@@ -137,6 +138,73 @@ public:
             response->set_errmsg(errmsg);
             return;
         };
+        // 1. 提取请求中的关键要素：请求ID，会话ID，要获取的消息数量
+        std::string rid = request->request_id();
+        std::string csid = request->chat_session_id();
+        int64_t msg_count = request->msg_count();
+        // 2. 从数据库，获取最新的消息元信息
+        auto msg_lists = _mysql_message->recent(csid, msg_count);
+        // 3. 组织消息中所有文件消息的文件ID，并从文件子服务进行文件下载
+        std::vector<std::string> file_id_lists;
+        for(auto &msg : msg_lists) {
+            if(msg.file_id().empty()) continue; // 不是文件的直接跳过
+            file_id_lists.push_back(msg.file_id());
+        }
+        std::unordered_map<std::string, std::string> file_data_lists;
+        auto ret = _GetFile(rid, file_id_lists, file_data_lists);
+        if(ret == false) {
+            LOG_ERROR("{} 批量文件数据下载失败! ", rid);
+            return err_response(rid, "批量文件数据下载失败!");
+        }
+        // 4. 组织消息中所有消息的用户ID，并从用户子服务进行用户信息获取
+        std::vector<std::string> user_id_lists;
+        for(auto &msg : msg_lists) {
+            user_id_lists.push_back(msg.user_id());
+        }
+        std::unordered_map<std::string, UserInfo> user_data_lists;
+        ret = _GetUser(rid, user_id_lists, user_data_lists);
+        if(ret == false) {
+            LOG_ERROR("{} 批量用户数据获取失败! ", rid);
+            return err_response(rid, "批量用户数据获取失败!");
+        }
+        // 5. 组织响应
+        response->set_request_id(rid);
+        response->set_success(true);
+        for(auto &msg : msg_lists) {
+            auto message_info = response->add_msg_list();
+            message_info->set_message_id(msg.message_id());
+            message_info->set_chat_session_id(msg.session_id());
+            message_info->set_timestamp(boost::posix_time::to_time_t(msg.create_time()));
+            message_info->mutable_sender()->CopyFrom(user_data_lists[msg.user_id()]);
+            auto message_content = message_info->mutable_message();
+            switch (message_content->message_type()) {
+                case MessageType::STRING:
+                    message_content->set_message_type(MessageType::STRING);
+                    message_content->mutable_string_message()->set_content(msg.content()); // 这个是数据库直接有内容, 其他几种是没有的
+                    break;
+                case MessageType::IMAGE:
+                    message_content->set_message_type(MessageType::IMAGE);
+                    message_content->mutable_image_message()->set_file_id(msg.file_id());
+                    message_content->mutable_image_message()->set_image_content(file_data_lists[msg.file_id()]); 
+                    break;
+                case MessageType::FILE:
+                    message_content->set_message_type(MessageType::FILE);
+                    message_content->mutable_file_message()->set_file_id(msg.file_id());
+                    message_content->mutable_file_message()->set_file_size(msg.file_size());
+                    message_content->mutable_file_message()->set_file_name(msg.file_name());
+                    message_content->mutable_file_message()->set_file_contents(file_data_lists[msg.file_id()]);
+                    break;
+                case MessageType::SPEECH:  
+                    message_content->set_message_type(MessageType::SPEECH);
+                    message_content->mutable_speech_message()->set_file_id(msg.file_id());
+                    message_content->mutable_speech_message()->set_file_contents(file_data_lists[msg.file_id()]);  // 这个感觉是命名的问题, 命名的也是 set_file_contents
+                    break;
+                default:
+                    LOG_ERROR("消息类型不存在! ");
+                    break;
+            }
+        }
+        return;
     }
   virtual void MsgSearch(::google::protobuf::RpcController* controller,
                        const ::lotso_im::MsgSearchReq* request,
@@ -150,6 +218,37 @@ public:
             response->set_errmsg(errmsg);
             return;
         };
+        // 1. 从请求中提取关键要素：请求ID，会话ID，关键字
+        std::string rid = request->request_id();
+        std::string csid = request->chat_session_id();
+        std::string skey = request->search_key();
+        // 2. 从 ES 搜索引擎中进行关键字消息搜索，得到消息列表
+        auto msg_lists = _es_user->search(skey, csid);
+        // 3. 组织所有消息的用户ID，从用户子服务获取用户信息
+        std::vector<std::string> user_id_lists;
+        for(auto &msg : msg_lists) {
+            user_id_lists.push_back(msg.user_id());
+        }
+        std::unordered_map<std::string, UserInfo> user_data_lists;
+        auto ret = _GetUser(rid, user_id_lists, user_data_lists);
+        if(ret == false) {
+            LOG_ERROR("{} 批量用户数据获取失败! ", rid);
+            return err_response(rid, "批量用户数据获取失败!");
+        }
+        // 4. 组织响应
+                response->set_request_id(rid);
+        response->set_success(true);
+        for(auto &msg : msg_lists) {
+            auto message_info = response->add_msg_list();
+            message_info->set_message_id(msg.message_id());
+            message_info->set_chat_session_id(msg.session_id());
+            message_info->set_timestamp(boost::posix_time::to_time_t(msg.create_time()));
+            message_info->mutable_sender()->CopyFrom(user_data_lists[msg.user_id()]);
+            auto message_content = message_info->mutable_message();
+            message_content->set_message_type(MessageType::STRING);
+            message_content->mutable_string_message()->set_content(msg.content());
+        }
+        return;
     }
 public:
     // MQ 消息消费回调, 由 MessageServerBuilder 在订阅队列时绑定, 因此必须是 public

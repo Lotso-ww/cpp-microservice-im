@@ -1,7 +1,7 @@
 # 1. 添加cmake版本说明
 cmake_minimum_required(VERSION 3.1.3)
 # 2. 声明工程名称
-project(user_server)
+project(transmite_server)
 # 生成 compile_commands.json 供 clangd 识别头文件路径
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 17)
